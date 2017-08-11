@@ -76,7 +76,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 
             return programState
                 .PopValues(invocationArgsCount + 1)
-                .PushValue(new SymbolicValue());
+                .PushValue(SymbolicValueFactory.Create());
         }
 
         private ProgramState HandleNameofExpression(int argumentsCount)
@@ -87,7 +87,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
                 .PopValues(argumentsCount)
                 .PopValue();
 
-            var nameof = new SymbolicValue();
+            var nameof = SymbolicValueFactory.Create();
             newProgramState = newProgramState.PushValue(nameof);
             return nameof.SetConstraint(ObjectConstraint.NotNull, newProgramState);
         }
@@ -106,7 +106,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
                 return newProgramState.PushValue(SymbolicValue.True);
             }
 
-            return newProgramState.PushValue(new SymbolicValue());
+            return newProgramState.PushValue(SymbolicValueFactory.Create());
         }
 
         private ProgramState HandleStaticEqualsCall()

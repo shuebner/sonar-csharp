@@ -326,8 +326,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
             var initialProgramState = new ProgramState();
             foreach (var parameter in declarationParameters)
             {
-                var sv = SymbolicValue.Create(parameter.Type);
-                initialProgramState = initialProgramState.StoreSymbolicValue(parameter, sv);
+                var sv = SymbolicValueFactory.Create(parameter.Type);
+                initialProgramState.StoreSymbolicValue(parameter, sv);
                 initialProgramState = SetNonNullConstraintIfValueType(parameter, sv, initialProgramState);
             }
 

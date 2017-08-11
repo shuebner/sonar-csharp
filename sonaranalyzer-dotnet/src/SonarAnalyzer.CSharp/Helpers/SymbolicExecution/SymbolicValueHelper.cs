@@ -29,7 +29,7 @@ namespace SonarAnalyzer.Helpers.SymbolicExecution
         {
             if (!fieldSymbol.IsConst || !fieldSymbol.HasConstantValue)
             {
-                return new SymbolicValue();
+                return SymbolicValueFactory.Create(fieldSymbol.Type);
             }
 
             var boolValue = fieldSymbol.ConstantValue as bool?;
@@ -42,7 +42,7 @@ namespace SonarAnalyzer.Helpers.SymbolicExecution
 
             return fieldSymbol.ConstantValue == null
                 ? SymbolicValue.Null
-                : new SymbolicValue();
+                : SymbolicValueFactory.Create();
         }
     }
 }

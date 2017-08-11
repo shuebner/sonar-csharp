@@ -22,7 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Microsoft.CodeAnalysis;
 
 namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 {
@@ -90,17 +89,6 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
         private SymbolicValue(object identifier)
         {
             this.identifier = identifier;
-        }
-
-        internal static SymbolicValue Create(ITypeSymbol type = null)
-        {
-            if (type != null &&
-                type.OriginalDefinition.Is(KnownType.System_Nullable_T))
-            {
-                return new NullableSymbolicValue(new SymbolicValue());
-            }
-
-            return new SymbolicValue();
         }
 
         public override string ToString()

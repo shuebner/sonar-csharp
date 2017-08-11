@@ -34,7 +34,7 @@ namespace SonarAnalyzer.UnitTest.Helpers.FlowAnalysis
         [TestInitialize]
         public void TestInitialize()
         {
-            sv_w = SymbolicValue.Create();
+            sv_w = SymbolicValueFactory.Create();
             sv_0 = new NullableSymbolicValue(sv_w);
         }
 
