@@ -33,7 +33,7 @@ using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
 namespace SonarAnalyzer.Rules.CSharp
 {
     using System.Collections.Immutable;
-    using ExplodedGraph = Helpers.FlowAnalysis.CSharp.ExplodedGraph;
+    using ExplodedGraphWalker = Helpers.FlowAnalysis.CSharp.ExplodedGraphWalker;
 
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     [Rule(DiagnosticId)]
@@ -52,7 +52,7 @@ namespace SonarAnalyzer.Rules.CSharp
             context.RegisterExplodedGraphBasedAnalysis((e, c) => CheckForNullDereference(e, c));
         }
 
-        private static void CheckForNullDereference(ExplodedGraph explodedGraph, SyntaxNodeAnalysisContext context)
+        private static void CheckForNullDereference(ExplodedGraphWalker explodedGraph, SyntaxNodeAnalysisContext context)
         {
             var nullPointerCheck = new NullPointerCheck(explodedGraph);
             explodedGraph.AddExplodedGraphCheck(nullPointerCheck);
@@ -94,7 +94,7 @@ namespace SonarAnalyzer.Rules.CSharp
 
             public event EventHandler<MemberAccessedEventArgs> MemberAccessed;
 
-            public NullPointerCheck(ExplodedGraph explodedGraph)
+            public NullPointerCheck(ExplodedGraphWalker explodedGraph)
                 : base(explodedGraph)
             {
 

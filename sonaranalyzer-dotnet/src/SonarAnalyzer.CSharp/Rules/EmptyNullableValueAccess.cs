@@ -32,7 +32,7 @@ using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
 namespace SonarAnalyzer.Rules.CSharp
 {
     using System.Collections.Immutable;
-    using ExplodedGraph = Helpers.FlowAnalysis.CSharp.ExplodedGraph;
+    using ExplodedGraphWalker = Helpers.FlowAnalysis.CSharp.ExplodedGraphWalker;
 
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     [Rule(DiagnosticId)]
@@ -54,7 +54,7 @@ namespace SonarAnalyzer.Rules.CSharp
             context.RegisterExplodedGraphBasedAnalysis((e, c) => CheckEmptyNullableAccess(e, c));
         }
 
-        private static void CheckEmptyNullableAccess(ExplodedGraph explodedGraph, SyntaxNodeAnalysisContext context)
+        private static void CheckEmptyNullableAccess(ExplodedGraphWalker explodedGraph, SyntaxNodeAnalysisContext context)
         {
             var nullPointerCheck = new NullValueAccessedCheck(explodedGraph);
             explodedGraph.AddExplodedGraphCheck(nullPointerCheck);
@@ -85,7 +85,7 @@ namespace SonarAnalyzer.Rules.CSharp
         {
             public event EventHandler<MemberAccessedEventArgs> ValuePropertyAccessed;
 
-            public NullValueAccessedCheck(ExplodedGraph explodedGraph)
+            public NullValueAccessedCheck(ExplodedGraphWalker explodedGraph)
                 : base(explodedGraph)
             {
             }

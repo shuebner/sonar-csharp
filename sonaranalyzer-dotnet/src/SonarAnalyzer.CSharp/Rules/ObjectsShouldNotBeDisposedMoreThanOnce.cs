@@ -30,7 +30,7 @@ using SonarAnalyzer.Common;
 using SonarAnalyzer.Helpers;
 using SonarAnalyzer.Helpers.FlowAnalysis.Common;
 using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
-using ExplodedGraph = SonarAnalyzer.Helpers.FlowAnalysis.CSharp.ExplodedGraph;
+using ExplodedGraphWalker = SonarAnalyzer.Helpers.FlowAnalysis.CSharp.ExplodedGraphWalker;
 
 namespace SonarAnalyzer.Rules.CSharp
 {
@@ -57,7 +57,7 @@ namespace SonarAnalyzer.Rules.CSharp
             context.RegisterExplodedGraphBasedAnalysis(CheckForMultipleDispose);
         }
 
-        private static void CheckForMultipleDispose(ExplodedGraph explodedGraph, SyntaxNodeAnalysisContext context)
+        private static void CheckForMultipleDispose(ExplodedGraphWalker explodedGraph, SyntaxNodeAnalysisContext context)
         {
             var objectDisposedCheck = new ObjectDisposedPointerCheck(explodedGraph);
             explodedGraph.AddExplodedGraphCheck(objectDisposedCheck);
@@ -97,7 +97,7 @@ namespace SonarAnalyzer.Rules.CSharp
         {
             public event EventHandler<ObjectDisposedEventArgs> ObjectDisposed;
 
-            public ObjectDisposedPointerCheck(ExplodedGraph explodedGraph)
+            public ObjectDisposedPointerCheck(ExplodedGraphWalker explodedGraph)
                 : base(explodedGraph)
             {
             }
