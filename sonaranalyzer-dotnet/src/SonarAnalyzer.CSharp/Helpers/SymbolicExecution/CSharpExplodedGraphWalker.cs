@@ -34,6 +34,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
     internal class CSharpExplodedGraphWalker : AbstractExplodedGraphWalker
     {
         private readonly IEnumerable<ConstraintDecorator> decorators;
+        private readonly IEnumerable<ConstraintObserver> observers;
 
         protected override IEnumerable<ConstraintDecorator> ConstraintDecorators => decorators;
 
@@ -51,7 +52,19 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 new NullableConstraintDecorator(this),
                 new BooleanConstraintDecorator(this),
                 new CollectionConstraintDecorator(this),
-                new DisposableConstraintDecoratror(this));
+                new DisposableConstraintDecorator(this));
+
+            observers = ImmutableList.Create<ConstraintObserver>(
+                new DisposableConstraintObserver(node => { /* TODO */ }));
+        }
+
+        public override void Publish<T>(T value)
+        {
+            var observersOfT = observers.OfType<IObserver<T>>();
+            foreach (var observer in observersOfT)
+            {
+                observer.OnNext(value);
+            }
         }
 
         #region Visit*
@@ -470,7 +483,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             // foreach variable is not a VariableDeclarator, so we need to assign a value to it
             var foreachVariableSymbol = SemanticModel.GetDeclaredSymbol(binaryBranchBlock.BranchingNode);
             var sv = new SymbolicValue();
-            var newProgramState = SetNonNullConstraintIfValueType(foreachVariableSymbol, sv, programState);
+            //var newProgramState = SetNonNullConstraintIfValueType(foreachVariableSymbol, sv, programState);
+            var newProgramState = programState; // switch with the line before
             newProgramState = StoreSymbolicValueIfSymbolIsTracked(foreachVariableSymbol, sv, newProgramState);
 
             EnqueueAllSuccessors(binaryBranchBlock, newProgramState);

@@ -69,6 +69,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
             nonInDeclarationParameters = declarationParameters.Where(p => p.RefKind != RefKind.None);
         }
 
+        public abstract void Publish<T>(T value);
+
         public void Walk()
         {
             var steps = 0;
