@@ -435,7 +435,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                     throw new NotImplementedException($"{instruction.Kind()}");
             }
 
-            newProgramState = ConstraintDecorators.Aggregate(newProgramState, 
+            newProgramState = ConstraintDecorators.Aggregate(newProgramState,
                 (ps, decorator) => decorator.PostProcessInstruction(instruction, node.ProgramState, ps));
 
             newProgramState = EnsureStackState(parenthesizedExpression, newProgramState);
@@ -738,14 +738,13 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             }
             newProgramState = newProgramState.PushValue(sv);
 
-            // TODO: AMAURY NOT SURE WHAT TO DO HERE
-            //var parenthesized = identifier.GetSelfOrTopParenthesizedExpression();
-            //var argument = parenthesized.Parent as ArgumentSyntax;
-            //if (argument == null ||
-            //    argument.RefOrOutKeyword.IsKind(SyntaxKind.None))
-            //{
-            //    return SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
-            //}
+            var parenthesized = identifier.GetSelfOrTopParenthesizedExpression();
+            var argument = parenthesized.Parent as ArgumentSyntax;
+            if (argument == null ||
+                argument.RefOrOutKeyword.IsKind(SyntaxKind.None))
+            {
+                return newProgramState;
+            }
 
             newProgramState = newProgramState.PopValue();
             sv = SymbolicValue.Create(typeSymbol);

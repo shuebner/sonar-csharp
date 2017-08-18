@@ -46,9 +46,9 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             switch (instruction.Kind())
             {
                 case SyntaxKind.InvocationExpression:
-                    return VisitInvocationExpression((InvocationExpressionSyntax)instruction, programState);
+                    return VisitInvocationExpression((InvocationExpressionSyntax)instruction, postProgramState);
                 default:
-                    return programState;
+                    return postProgramState;
             }
         }
 

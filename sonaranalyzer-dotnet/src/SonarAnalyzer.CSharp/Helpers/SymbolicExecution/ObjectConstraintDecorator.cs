@@ -83,7 +83,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 
                         if (base.explodedGraphWalker.IsSymbolTracked(symbol))
                         {
-                            var sv = newProgramState.ExpressionStack.Peek();
+                            var sv = preProgramState.ExpressionStack.Peek();
                             newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
                         }
                         break;
