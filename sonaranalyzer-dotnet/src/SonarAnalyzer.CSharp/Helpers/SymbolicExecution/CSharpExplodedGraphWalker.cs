@@ -29,9 +29,9 @@ using SonarAnalyzer.Rules.CSharp;
 
 namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 {
-    internal class ExplodedGraphWalker : Common.BaseExplodedGraph
+    internal class CSharpExplodedGraphWalker : AbstractExplodedGraphWalker
     {
-        public ExplodedGraphWalker(IControlFlowGraph cfg, ISymbol declaration, SemanticModel semanticModel, Common.LiveVariableAnalysis lva)
+        public CSharpExplodedGraphWalker(IControlFlowGraph cfg, ISymbol declaration, SemanticModel semanticModel, Common.LiveVariableAnalysis lva)
             : base(cfg, declaration, semanticModel, lva)
         {
             // Add mandatory checks
@@ -457,7 +457,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             var foreachVariableSymbol = SemanticModel.GetDeclaredSymbol(binaryBranchBlock.BranchingNode);
             var sv = new SymbolicValue();
             var newProgramState = SetNonNullConstraintIfValueType(foreachVariableSymbol, sv, programState);
-            newProgramState = SetNewSymbolicValueIfTracked(foreachVariableSymbol, sv, newProgramState);
+            newProgramState = StoreSymbolicValueIfSymbolIsTracked(foreachVariableSymbol, sv, newProgramState);
 
             EnqueueAllSuccessors(binaryBranchBlock, newProgramState);
         }
@@ -578,39 +578,20 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 sv = new MemberAccessSymbolicValue(memberExpression, memberAccess.Name.Identifier.ValueText);
             }
 
-            newProgramState = SetNonNullConstraintIfValueType(memberAccess, sv, newProgramState);
             return newProgramState.PushValue(sv);
         }
 
         private static ProgramState VisitSafeCastExpression(BinaryExpressionSyntax instruction, ProgramState programState)
         {
-            SymbolicValue sv;
-            var newProgramState = programState.PopValue(out sv);
             var resultValue = new SymbolicValue();
-            if (sv.HasConstraint(ObjectConstraint.Null, newProgramState))
-            {
-                var constraint = instruction.IsKind(SyntaxKind.IsExpression)
-                    ? (SymbolicValueConstraint)BoolConstraint.False
-                    : ObjectConstraint.Null;
-                newProgramState = resultValue.SetConstraint(constraint, newProgramState);
-            }
 
-            return newProgramState.PushValue(resultValue);
+            return programState.PopValue().PushValue(resultValue);
         }
 
         private ProgramState VisitDefaultExpression(DefaultExpressionSyntax instruction, ProgramState programState)
         {
             var sv = new SymbolicValue();
-            var typeSymbol = SemanticModel.GetTypeInfo(instruction).Type;
-
-            var isReferenceOrNullable = typeSymbol.IsReferenceType ||
-                typeSymbol.OriginalDefinition.Is(KnownType.System_Nullable_T);
-
-            var newProgramState = isReferenceOrNullable
-                ? sv.SetConstraint(ObjectConstraint.Null, programState)
-                : SetNonNullConstraintIfValueType(typeSymbol, sv, programState);
-
-            return newProgramState.PushValue(sv);
+            return programState.PushValue(sv);
         }
 
         private bool IsOperatorOnObject(SyntaxNode instruction)
@@ -695,8 +676,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 
             var sv = symbolicValueFactory(leftSymbol, rightSymbol);
             newProgramState = newProgramState.PushValue(sv);
-            newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
-            return SetNewSymbolicValueIfTracked(symbol, sv, newProgramState);
+
+            return StoreSymbolicValueIfSymbolIsTracked(symbol, sv, newProgramState);
         }
 
         private ProgramState VisitObjectCreation(ObjectCreationExpressionSyntax ctor, ProgramState programState)
@@ -763,69 +744,59 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             }
             newProgramState = newProgramState.PushValue(sv);
 
-            var parenthesized = identifier.GetSelfOrTopParenthesizedExpression();
-            var argument = parenthesized.Parent as ArgumentSyntax;
-            if (argument == null ||
-                argument.RefOrOutKeyword.IsKind(SyntaxKind.None))
-            {
-                return SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
-            }
+            // TODO: AMAURY NOT SURE WHAT TO DO HERE
+            //var parenthesized = identifier.GetSelfOrTopParenthesizedExpression();
+            //var argument = parenthesized.Parent as ArgumentSyntax;
+            //if (argument == null ||
+            //    argument.RefOrOutKeyword.IsKind(SyntaxKind.None))
+            //{
+            //    return SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
+            //}
 
             newProgramState = newProgramState.PopValue();
             sv = SymbolicValue.Create(typeSymbol);
             newProgramState = newProgramState.PushValue(sv);
-            newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
-            return SetNewSymbolicValueIfTracked(symbol, sv, newProgramState);
+            return StoreSymbolicValueIfSymbolIsTracked(symbol, sv, newProgramState);
         }
 
         private ProgramState VisitPostfixIncrement(PostfixUnaryExpressionSyntax unary, ProgramState programState)
         {
             var symbol = SemanticModel.GetSymbolInfo(unary.Operand).Symbol;
-
-            // Do not change the stacked value
             var sv = new SymbolicValue();
-            var newProgramState = SetNonNullConstraintIfValueType(symbol, sv, programState);
-            return SetNewSymbolicValueIfTracked(symbol, sv, newProgramState);
+
+            return StoreSymbolicValueIfSymbolIsTracked(symbol, sv, programState);
         }
 
         private ProgramState VisitPrefixIncrement(PrefixUnaryExpressionSyntax unary, ProgramState programState)
         {
-            var newProgramState = programState;
             var symbol = SemanticModel.GetSymbolInfo(unary.Operand).Symbol;
-            newProgramState = newProgramState.PopValue();
-
             var sv = new SymbolicValue();
-            newProgramState = newProgramState.PushValue(sv);
-            newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
-            return SetNewSymbolicValueIfTracked(symbol, sv, newProgramState);
+            var newProgramState = programState.PopValue().PushValue(sv);
+
+            return StoreSymbolicValueIfSymbolIsTracked(symbol, sv, newProgramState);
         }
 
         private ProgramState VisitOpAssignment(AssignmentExpressionSyntax assignment, ProgramState programState)
         {
-            var newProgramState = programState;
-            var leftSymbol = SemanticModel.GetSymbolInfo(assignment.Left).Symbol;
-            newProgramState = newProgramState.PopValues(2);
-
             var sv = new SymbolicValue();
-            newProgramState = newProgramState.PushValue(sv);
-            newProgramState = SetNonNullConstraintIfValueType(leftSymbol, sv, newProgramState);
-            return SetNewSymbolicValueIfTracked(leftSymbol, sv, newProgramState);
+            var newProgramState = programState.PopValues(2).PushValue(sv);
+            var leftSymbol = SemanticModel.GetSymbolInfo(assignment.Left).Symbol;
+
+            return StoreSymbolicValueIfSymbolIsTracked(leftSymbol, sv, newProgramState);
         }
 
         private ProgramState VisitSimpleAssignment(AssignmentExpressionSyntax assignment, ProgramState programState)
         {
-            var newProgramState = programState;
             SymbolicValue sv;
-            newProgramState = newProgramState.PopValue(out sv);
+            var newProgramState = programState.PopValue(out sv);
             if (!ControlFlowGraphBuilder.IsAssignmentWithSimpleLeftSide(assignment))
             {
                 newProgramState = newProgramState.PopValue();
             }
+            newProgramState = newProgramState.PushValue(sv);
 
             var leftSymbol = SemanticModel.GetSymbolInfo(assignment.Left).Symbol;
-            newProgramState = newProgramState.PushValue(sv);
-            newProgramState = SetNewSymbolicValueIfTracked(leftSymbol, sv, newProgramState);
-            return SetNonNullConstraintIfValueType(leftSymbol, sv, newProgramState);
+            return StoreSymbolicValueIfSymbolIsTracked(leftSymbol, sv, newProgramState);
         }
 
         private ProgramState VisitVariableDeclarator(VariableDeclaratorSyntax declarator, ProgramState programState)
@@ -845,7 +816,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 newProgramState = newProgramState.StoreSymbolicValue(leftSymbol, sv);
             }
 
-            return SetNonNullConstraintIfValueType(leftSymbol, sv, newProgramState);
+            return newProgramState;
         }
 
         #endregion

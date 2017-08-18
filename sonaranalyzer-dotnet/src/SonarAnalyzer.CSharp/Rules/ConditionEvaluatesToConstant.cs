@@ -31,7 +31,7 @@ using SonarAnalyzer.Common;
 using SonarAnalyzer.Helpers;
 using SonarAnalyzer.Helpers.FlowAnalysis.Common;
 using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
-using ExplodedGraphWalker = SonarAnalyzer.Helpers.FlowAnalysis.CSharp.ExplodedGraphWalker;
+using CSharpExplodedGraphWalker = SonarAnalyzer.Helpers.FlowAnalysis.CSharp.CSharpExplodedGraphWalker;
 
 namespace SonarAnalyzer.Rules.CSharp
 {
@@ -73,7 +73,7 @@ namespace SonarAnalyzer.Rules.CSharp
             context.RegisterExplodedGraphBasedAnalysis((e, c) => CheckForRedundantConditions(e, c));
         }
 
-        private static void CheckForRedundantConditions(ExplodedGraphWalker explodedGraph, SyntaxNodeAnalysisContext context)
+        private static void CheckForRedundantConditions(CSharpExplodedGraphWalker explodedGraph, SyntaxNodeAnalysisContext context)
         {
             var conditionTrue = new HashSet<SyntaxNode>();
             var conditionFalse = new HashSet<SyntaxNode>();

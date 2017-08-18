@@ -24,10 +24,10 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 {
     internal class ExplodedGraphCheck
     {
-        protected readonly BaseExplodedGraph explodedGraph;
+        protected readonly AbstractExplodedGraphWalker explodedGraph;
         protected readonly SemanticModel semanticModel;
 
-        protected ExplodedGraphCheck(BaseExplodedGraph explodedGraph)
+        protected ExplodedGraphCheck(AbstractExplodedGraphWalker explodedGraph)
         {
             this.explodedGraph = explodedGraph;
             this.semanticModel = explodedGraph.SemanticModel;

@@ -93,7 +93,7 @@ namespace SonarAnalyzer.Rules.CSharp
             context.RegisterExplodedGraphBasedAnalysis(CheckForEmptyCollectionAccess);
         }
 
-        private void CheckForEmptyCollectionAccess(ExplodedGraphWalker explodedGraph, SyntaxNodeAnalysisContext context)
+        private void CheckForEmptyCollectionAccess(CSharpExplodedGraphWalker explodedGraph, SyntaxNodeAnalysisContext context)
         {
             var check = new EmptyCollectionAccessedCheck(explodedGraph);
             explodedGraph.AddExplodedGraphCheck(check);
@@ -124,7 +124,7 @@ namespace SonarAnalyzer.Rules.CSharp
         {
             public event EventHandler<CollectionAccessedEventArgs> CollectionAccessed;
 
-            public EmptyCollectionAccessedCheck(ExplodedGraphWalker explodedGraph)
+            public EmptyCollectionAccessedCheck(CSharpExplodedGraphWalker explodedGraph)
                 : base(explodedGraph)
             {
             }

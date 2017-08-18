@@ -11,7 +11,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             throw new NotImplementedException();
         }
 
-        public ProgramState PostProcessInstruction(SyntaxNode instruction, ProgramState programState)
+        public ProgramState PostProcessInstruction(SyntaxNode instruction, ProgramState preProgramState,
+            ProgramState postProgramState)
         {
             throw new NotImplementedException();
         }

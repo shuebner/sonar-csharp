@@ -235,7 +235,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
         protected IEnumerable<ProgramState> ThrowIfTooMany(IEnumerable<ProgramState> states)
         {
             var stateList = states.ToList();
-            if (stateList.Count >= BaseExplodedGraph.MaxInternalStateCount)
+            if (stateList.Count >= AbstractExplodedGraphWalker.MaxInternalStateCount)
             {
                 throw new TooManyInternalStatesException();
             }

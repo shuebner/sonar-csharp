@@ -32,7 +32,7 @@ using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
 namespace SonarAnalyzer.Rules.CSharp
 {
     using System.Collections.Immutable;
-    using ExplodedGraphWalker = Helpers.FlowAnalysis.CSharp.ExplodedGraphWalker;
+    using CSharpExplodedGraphWalker = Helpers.FlowAnalysis.CSharp.CSharpExplodedGraphWalker;
 
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     [Rule(DiagnosticId)]
@@ -101,7 +101,7 @@ namespace SonarAnalyzer.Rules.CSharp
             context.RegisterExplodedGraphBasedAnalysis((e, c) => CheckEmptyNullableCast(e, c));
         }
 
-        private static void CheckEmptyNullableCast(ExplodedGraphWalker explodedGraph, SyntaxNodeAnalysisContext context)
+        private static void CheckEmptyNullableCast(CSharpExplodedGraphWalker explodedGraph, SyntaxNodeAnalysisContext context)
         {
             explodedGraph.AddExplodedGraphCheck(new NullableCastCheck(explodedGraph, context));
             explodedGraph.Walk();
@@ -111,12 +111,12 @@ namespace SonarAnalyzer.Rules.CSharp
         {
             private readonly SyntaxNodeAnalysisContext context;
 
-            public NullableCastCheck(ExplodedGraphWalker explodedGraph)
+            public NullableCastCheck(CSharpExplodedGraphWalker explodedGraph)
                 : base(explodedGraph)
             {
             }
 
-            public NullableCastCheck(ExplodedGraphWalker explodedGraph, SyntaxNodeAnalysisContext context)
+            public NullableCastCheck(CSharpExplodedGraphWalker explodedGraph, SyntaxNodeAnalysisContext context)
                 : this(explodedGraph)
             {
                 this.context = context;

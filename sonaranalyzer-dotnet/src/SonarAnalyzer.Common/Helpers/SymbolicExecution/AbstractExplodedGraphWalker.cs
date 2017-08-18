@@ -26,7 +26,7 @@ using Microsoft.CodeAnalysis;
 
 namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 {
-    internal abstract class BaseExplodedGraph
+    internal abstract class AbstractExplodedGraphWalker
     {
         internal const int MaxStepCount = 1000;
         internal const int MaxInternalStateCount = 10000;
@@ -55,7 +55,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
         public event EventHandler ExitBlockReached;
         public event EventHandler<ConditionEvaluatedEventArgs> ConditionEvaluated;
 
-        protected BaseExplodedGraph(IControlFlowGraph cfg, ISymbol declaration, SemanticModel semanticModel, LiveVariableAnalysis lva)
+        protected AbstractExplodedGraphWalker(IControlFlowGraph cfg, ISymbol declaration, SemanticModel semanticModel, LiveVariableAnalysis lva)
         {
             this.cfg = cfg;
             this.declaration = declaration;
@@ -374,69 +374,12 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 
         #endregion
 
-        protected ProgramState SetNewSymbolicValueIfTracked(ISymbol symbol, SymbolicValue symbolicValue, ProgramState programState)
+        protected ProgramState StoreSymbolicValueIfSymbolIsTracked(ISymbol symbol, SymbolicValue symbolicValue,
+            ProgramState programState)
         {
             return IsSymbolTracked(symbol)
                 ? programState.StoreSymbolicValue(symbol, symbolicValue)
                 : programState;
-        }
-
-        protected static ProgramState SetNonNullConstraintIfValueType(ITypeSymbol typeSymbol, SymbolicValue symbolicValue, ProgramState programState)
-        {
-            var isDefinitelyNotNull = !symbolicValue.HasConstraint(ObjectConstraint.NotNull, programState) &&
-                IsNonNullableValueType(typeSymbol) &&
-                !IsValueTypeWithOverloadedNullCompatibleOpEquals(typeSymbol) &&
-                !IsPointer(typeSymbol);
-
-            return isDefinitelyNotNull
-                ? symbolicValue.SetConstraint(ObjectConstraint.NotNull, programState)
-                : programState;
-        }
-
-        private static bool IsPointer(ITypeSymbol typeSymbol)
-        {
-            return typeSymbol?.TypeKind == TypeKind.Pointer;
-        }
-
-        private static bool IsValueTypeWithOverloadedNullCompatibleOpEquals(ITypeSymbol type)
-        {
-            if (type == null ||
-                !type.IsValueType)
-            {
-                return false;
-            }
-
-            return type.GetMembers("op_Equality")
-                .OfType<IMethodSymbol>()
-                .Any(m => m.Parameters.Any(p => IsNullCompatibleType(p.Type)));
-        }
-
-        private static bool IsNullCompatibleType(ITypeSymbol type)
-        {
-            if (type == null)
-            {
-                return false;
-            }
-
-            return !type.IsValueType ||
-                type.OriginalDefinition.Is(KnownType.System_Nullable_T);
-        }
-
-        protected static ProgramState SetNonNullConstraintIfValueType(ISymbol symbol, SymbolicValue symbolicValue, ProgramState programState)
-        {
-            return SetNonNullConstraintIfValueType(symbol.GetSymbolType(), symbolicValue, programState);
-        }
-
-        protected ProgramState SetNonNullConstraintIfValueType(SyntaxNode node, SymbolicValue symbolicValue, ProgramState programState)
-        {
-            return SetNonNullConstraintIfValueType(SemanticModel.GetTypeInfo(node).Type, symbolicValue, programState);
-        }
-
-        private static bool IsNonNullableValueType(ITypeSymbol type)
-        {
-            return type != null &&
-                type.IsValueType &&
-                !type.OriginalDefinition.Is(KnownType.System_Nullable_T);
         }
     }
 }

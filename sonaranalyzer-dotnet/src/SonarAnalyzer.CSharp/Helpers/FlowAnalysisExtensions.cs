@@ -30,7 +30,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
     internal static class FlowAnalysisExtensions
     {
         public static void RegisterExplodedGraphBasedAnalysis(this SonarAnalysisContext context,
-            Action<ExplodedGraphWalker, SyntaxNodeAnalysisContext> analyze)
+            Action<CSharpExplodedGraphWalker, SyntaxNodeAnalysisContext> analyze)
         {
             context.RegisterSyntaxNodeActionInNonGenerated(
                 c =>
@@ -113,7 +113,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         }
 
         private static void Analyze(CSharpSyntaxNode declarationBody, ISymbol symbol,
-            Action<ExplodedGraphWalker, SyntaxNodeAnalysisContext> analyze, SyntaxNodeAnalysisContext context)
+            Action<CSharpExplodedGraphWalker, SyntaxNodeAnalysisContext> analyze, SyntaxNodeAnalysisContext context)
         {
             if (declarationBody == null ||
                 declarationBody.ContainsDiagnostics)
@@ -129,7 +129,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 
             var lva = LiveVariableAnalysis.Analyze(cfg, symbol, context.SemanticModel);
 
-            var explodedGraph = new ExplodedGraphWalker(cfg, symbol, context.SemanticModel, lva);
+            var explodedGraph = new CSharpExplodedGraphWalker(cfg, symbol, context.SemanticModel, lva);
             analyze(explodedGraph, context);
         }
 
