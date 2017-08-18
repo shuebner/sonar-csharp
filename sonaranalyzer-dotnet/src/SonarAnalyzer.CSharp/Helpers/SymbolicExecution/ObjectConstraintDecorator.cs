@@ -140,6 +140,43 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                         newProgramState = SetNonNullConstraintIfValueType(typeSymbol, sv, newProgramState);
                         break;
                     }
+
+                case SyntaxKind.ObjectCreationExpression:
+                    {
+                        var sv = newProgramState.ExpressionStack.Peek();
+                        var symbol = this.semanticModel.GetSymbolInfo(instruction).Symbol as IMethodSymbol;
+                        if (symbol != null)
+                        {
+                            newProgramState = IsEmptyNullableCtorCall(symbol)
+                                ? sv.SetConstraint(ObjectConstraint.Null, newProgramState)
+                                : sv.SetConstraint(ObjectConstraint.NotNull, newProgramState);
+                        }
+                        break;
+                    }
+
+                case SyntaxKind.AnonymousObjectCreationExpression:
+                case SyntaxKind.StackAllocArrayCreationExpression:
+                    {
+                        var sv = newProgramState.ExpressionStack.Peek();
+                        newProgramState = sv.SetConstraint(ObjectConstraint.NotNull, newProgramState);
+                        break;
+                    }
+            }
+
+            return newProgramState;
+        }
+
+        public override ProgramState PostProcessBlock(Block block, ProgramState programState)
+        {
+            var newProgramState = programState;
+
+            var binaryBranchBlock = block as BinaryBranchBlock;
+            if (binaryBranchBlock != null &&
+                binaryBranchBlock.BranchingNode.IsKind(SyntaxKind.ForEachStatement))
+            {
+                var foreachVariableSymbol = this.semanticModel.GetDeclaredSymbol(binaryBranchBlock.BranchingNode);
+                var sv = newProgramState.ExpressionStack.Peek();
+                newProgramState = SetNonNullConstraintIfValueType(foreachVariableSymbol, sv, newProgramState);
             }
 
             return newProgramState;
@@ -194,6 +231,14 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             return type != null &&
                 type.IsValueType &&
                 !type.OriginalDefinition.Is(KnownType.System_Nullable_T);
+        }
+
+        private static bool IsEmptyNullableCtorCall(IMethodSymbol nullableConstructorCall)
+        {
+            return nullableConstructorCall != null &&
+                nullableConstructorCall.MethodKind == MethodKind.Constructor &&
+                nullableConstructorCall.ReceiverType.OriginalDefinition.Is(KnownType.System_Nullable_T) &&
+                nullableConstructorCall.Parameters.Length == 0;
         }
     }
 }

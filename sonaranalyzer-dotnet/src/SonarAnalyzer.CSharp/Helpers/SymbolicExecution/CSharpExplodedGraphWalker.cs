@@ -355,10 +355,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.StackAllocArrayCreationExpression:
                     {
                         var sv = new SymbolicValue();
-                        newProgramState = sv.SetConstraint(ObjectConstraint.NotNull, newProgramState);
                         newProgramState = newProgramState.PushValue(sv);
-                        newProgramState = InvokeChecks(newProgramState,
-                            (ps, check) => check.ObjectCreated(ps, sv, instruction));
                     }
                     break;
 
@@ -369,13 +366,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.AnonymousObjectCreationExpression:
                     {
                         var creation = (AnonymousObjectCreationExpressionSyntax)instruction;
-                        newProgramState = newProgramState.PopValues(creation.Initializers.Count);
-
                         var sv = new SymbolicValue();
-                        newProgramState = sv.SetConstraint(ObjectConstraint.NotNull, newProgramState);
-                        newProgramState = newProgramState.PushValue(sv);
-                        newProgramState = InvokeChecks(newProgramState,
-                            (ps, check) => check.ObjectCreated(ps, sv, instruction));
+                        newProgramState = newProgramState.PopValues(creation.Initializers.Count).PushValue(sv);
                     }
                     break;
 
@@ -470,8 +462,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             // foreach variable is not a VariableDeclarator, so we need to assign a value to it
             var foreachVariableSymbol = SemanticModel.GetDeclaredSymbol(binaryBranchBlock.BranchingNode);
             var sv = new SymbolicValue();
-            var newProgramState = SetNonNullConstraintIfValueType(foreachVariableSymbol, sv, programState);
-            newProgramState = StoreSymbolicValueIfSymbolIsTracked(foreachVariableSymbol, sv, newProgramState);
+            var newProgramState = StoreSymbolicValueIfSymbolIsTracked(foreachVariableSymbol, sv, programState);
 
             EnqueueAllSuccessors(binaryBranchBlock, newProgramState);
         }
@@ -699,23 +690,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             var newProgramState = InvokeChecks(programState, (ps, check) => check.ObjectCreating(ps, ctor));
 
             var sv = new SymbolicValue();
-            newProgramState = newProgramState.PopValues(ctor.ArgumentList?.Arguments.Count ?? 0);
-
-            var ctorSymbol = SemanticModel.GetSymbolInfo(ctor).Symbol as IMethodSymbol;
-            if (ctorSymbol == null)
-            {
-                // Add no constraint
-            }
-            else if (IsEmptyNullableCtorCall(ctorSymbol))
-            {
-                newProgramState = sv.SetConstraint(ObjectConstraint.Null, newProgramState);
-            }
-            else
-            {
-                newProgramState = sv.SetConstraint(ObjectConstraint.NotNull, newProgramState);
-            }
-
-            newProgramState = newProgramState.PushValue(sv);
+            newProgramState = newProgramState.PopValues(ctor.ArgumentList?.Arguments.Count ?? 0).PushValue(sv);
 
             return InvokeChecks(newProgramState, (ps, check) => check.ObjectCreated(ps, sv, ctor));
         }
@@ -888,14 +863,6 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 
             return parent is ExpressionStatementSyntax ||
                 parent is YieldStatementSyntax;
-        }
-
-        private static bool IsEmptyNullableCtorCall(IMethodSymbol nullableConstructorCall)
-        {
-            return nullableConstructorCall != null &&
-                nullableConstructorCall.MethodKind == MethodKind.Constructor &&
-                nullableConstructorCall.ReceiverType.OriginalDefinition.Is(KnownType.System_Nullable_T) &&
-                nullableConstructorCall.Parameters.Length == 0;
         }
 
         #endregion
