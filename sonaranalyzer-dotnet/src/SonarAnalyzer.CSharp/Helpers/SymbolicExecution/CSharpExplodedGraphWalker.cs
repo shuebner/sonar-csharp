@@ -19,6 +19,8 @@
  */
 
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -31,13 +33,25 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 {
     internal class CSharpExplodedGraphWalker : AbstractExplodedGraphWalker
     {
-        public CSharpExplodedGraphWalker(IControlFlowGraph cfg, ISymbol declaration, SemanticModel semanticModel, Common.LiveVariableAnalysis lva)
+        private readonly IEnumerable<ConstraintDecorator> decorators;
+
+        protected override IEnumerable<ConstraintDecorator> ConstraintDecorators => decorators;
+
+        public CSharpExplodedGraphWalker(IControlFlowGraph cfg, ISymbol declaration, SemanticModel semanticModel,
+            Common.LiveVariableAnalysis lva)
             : base(cfg, declaration, semanticModel, lva)
         {
             // Add mandatory checks
             AddExplodedGraphCheck(new NullPointerDereference.NullPointerCheck(this));
             AddExplodedGraphCheck(new EmptyNullableValueAccess.NullValueAccessedCheck(this));
             AddExplodedGraphCheck(new InvalidCastToInterface.NullableCastCheck(this));
+
+            decorators = ImmutableList.Create<ConstraintDecorator>(
+                new ObjectConstraintDecorator(this),
+                new NullableConstraintDecorator(this),
+                new BooleanConstraintDecorator(this),
+                new CollectionConstraintDecorator(this),
+                new DisposableConstraintDecoratror(this));
         }
 
         #region Visit*

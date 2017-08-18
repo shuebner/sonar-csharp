@@ -41,7 +41,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
         private readonly ISymbol declaration;
         private readonly IEnumerable<IParameterSymbol> declarationParameters;
         private readonly IEnumerable<IParameterSymbol> nonInDeclarationParameters;
-        private readonly Common.LiveVariableAnalysis lva;
+        private readonly LiveVariableAnalysis lva;
 
         protected readonly ICollection<ExplodedGraphCheck> explodedGraphChecks = new List<ExplodedGraphCheck>();
 
@@ -54,6 +54,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
         public event EventHandler<VisitCountExceedLimitEventArgs> ProgramPointVisitCountExceedLimit;
         public event EventHandler ExitBlockReached;
         public event EventHandler<ConditionEvaluatedEventArgs> ConditionEvaluated;
+
+        protected abstract IEnumerable<ConstraintDecorator> ConstraintDecorators { get; }
 
         protected AbstractExplodedGraphWalker(IControlFlowGraph cfg, ISymbol declaration, SemanticModel semanticModel, LiveVariableAnalysis lva)
         {
@@ -328,7 +330,11 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
             {
                 var sv = SymbolicValue.Create(parameter.Type);
                 initialProgramState = initialProgramState.StoreSymbolicValue(parameter, sv);
-                initialProgramState = SetNonNullConstraintIfValueType(parameter, sv, initialProgramState);
+                foreach (var decorator in ConstraintDecorators)
+                {
+                    initialProgramState =
+                        decorator.PostProcessDeclarationParameters(parameter, sv, initialProgramState);
+                }
             }
 
             EnqueueNewNode(new ProgramPoint(cfg.EntryBlock), initialProgramState);
