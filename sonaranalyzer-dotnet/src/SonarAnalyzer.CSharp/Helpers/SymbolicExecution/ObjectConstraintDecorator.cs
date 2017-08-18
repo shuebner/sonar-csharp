@@ -81,7 +81,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                     {
                         var symbol = base.semanticModel.GetDeclaredSymbol(instruction);
 
-                        if (base.explodedGraphWalker.IsSymbolTracked(symbol))
+                        if (base.explodedGraphWalker.IsSymbolTracked(symbol) &&
+                            !preProgramState.ExpressionStack.IsEmpty)
                         {
                             var sv = preProgramState.ExpressionStack.Peek();
                             newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);

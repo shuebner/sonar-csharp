@@ -31,14 +31,16 @@ namespace SonarAnalyzer.UnitTest.Rules
         [TestCategory("Rule")]
         public void NullPointerDereference()
         {
-            Verifier.VerifyAnalyzer(@"TestCases\NullPointerDereference.cs", new NullPointerDereference());
+            Verifier.VerifyAnalyzer(@"TestCases\NullPointerDereference.cs",
+                new NullPointerDereference());
         }
 
         [TestMethod]
         [TestCategory("Rule")]
         public void NullPointerDereferenceCSharp6()
         {
-            Verifier.VerifyAnalyzer(@"TestCases\NullPointerDereferenceCSharp6.cs", new NullPointerDereference(),
+            Verifier.VerifyAnalyzer(@"TestCases\NullPointerDereferenceCSharp6.cs",
+                new NullPointerDereference(),
                 new CSharpParseOptions(LanguageVersion.CSharp6));
         }
     }
