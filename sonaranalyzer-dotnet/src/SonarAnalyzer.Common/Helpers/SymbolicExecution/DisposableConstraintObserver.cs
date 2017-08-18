@@ -1,14 +1,13 @@
 ﻿using System;
-using Microsoft.CodeAnalysis;
 using SonarAnalyzer.Helpers.FlowAnalysis.Common;
 
 namespace SonarAnalyzer.Helpers.FlowAnalysis
 {
     public class DisposableConstraintObserver : ConstraintObserver
     {
-        public Action<SyntaxNode> Report { get; }
+        public Action<ConstraintAdding> Report { get; }
 
-        public DisposableConstraintObserver(Action<SyntaxNode> report)
+        public DisposableConstraintObserver(Action<ConstraintAdding> report)
         {
             Report = report;
         }
@@ -18,7 +17,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis
             if (value.Constraint == DisposableConstraint.Disposed &&
                 value.SymbolicValue.HasConstraint(DisposableConstraint.Disposed, value.ProgramState))
             {
-                Report(value.Instruction);
+                Report(value);
             }
         }
     }

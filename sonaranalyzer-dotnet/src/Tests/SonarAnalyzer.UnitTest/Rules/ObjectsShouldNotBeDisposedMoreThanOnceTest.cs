@@ -28,6 +28,26 @@ namespace SonarAnalyzer.UnitTest.Rules
     {
         [TestMethod]
         [TestCategory("Rule")]
+        public void ObjectsShouldNotBeDisposedMoreThanOnce1()
+        {
+            Verifier.VerifyCSharpAnalyzer(@"
+using System;
+using System.IO;
+public class Program
+{
+    public void DisposedTwise()
+    {
+        var d = new Disposable();
+        d.Dispose();
+        d.Dispose(); // Noncompliant
+    }
+}
+",
+                new ObjectsShouldNotBeDisposedMoreThanOnce());
+        }
+
+        [TestMethod]
+        [TestCategory("Rule")]
         public void ObjectsShouldNotBeDisposedMoreThanOnce()
         {
             Verifier.VerifyAnalyzer(@"TestCases\ObjectsShouldNotBeDisposedMoreThanOnce.cs",

@@ -35,7 +35,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             KnownType.System_IO_StreamWriter
         };
 
-        public DisposableConstraintDecorator(CSharpExplodedGraphWalker explodedGraphWalker)
+        public DisposableConstraintDecorator(AbstractExplodedGraphWalker explodedGraphWalker)
             : base(explodedGraphWalker)
         {
         }

@@ -57,6 +57,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 
         protected abstract IEnumerable<ConstraintDecorator> ConstraintDecorators { get; }
 
+        private readonly ICollection<ConstraintObserver> observers = new List<ConstraintObserver>();
+
         protected AbstractExplodedGraphWalker(IControlFlowGraph cfg, ISymbol declaration, SemanticModel semanticModel, LiveVariableAnalysis lva)
         {
             this.cfg = cfg;
@@ -68,8 +70,6 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
             declarationParameters = declaration.GetParameters();
             nonInDeclarationParameters = declarationParameters.Where(p => p.RefKind != RefKind.None);
         }
-
-        public abstract void Publish<T>(T value);
 
         public void Walk()
         {
@@ -157,6 +157,20 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
                 explodedGraphChecks.Remove(matchingCheck);
                 explodedGraphChecks.Add(check);
             }
+        }
+
+        public void Publish<T>(T value)
+        {
+            var observersOfT = observers.OfType<IObserver<T>>();
+            foreach (var observer in observersOfT)
+            {
+                observer.OnNext(value);
+            }
+        }
+
+        public void Subscribe(ConstraintObserver observer)
+        {
+            observers.Add(observer);
         }
 
         #region OnEvent*

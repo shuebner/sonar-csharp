@@ -34,7 +34,6 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
     internal class CSharpExplodedGraphWalker : AbstractExplodedGraphWalker
     {
         private readonly IEnumerable<ConstraintDecorator> decorators;
-        private readonly IEnumerable<ConstraintObserver> observers;
 
         protected override IEnumerable<ConstraintDecorator> ConstraintDecorators => decorators;
 
@@ -53,18 +52,6 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 new BooleanConstraintDecorator(this),
                 new CollectionConstraintDecorator(this),
                 new DisposableConstraintDecorator(this));
-
-            observers = ImmutableList.Create<ConstraintObserver>(
-                new DisposableConstraintObserver(node => { /* TODO */ }));
-        }
-
-        public override void Publish<T>(T value)
-        {
-            var observersOfT = observers.OfType<IObserver<T>>();
-            foreach (var observer in observersOfT)
-            {
-                observer.OnNext(value);
-            }
         }
 
         #region Visit*
@@ -173,11 +160,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             var newProgramPoint = new ProgramPoint(node.ProgramPoint.Block, node.ProgramPoint.Offset + 1);
             var newProgramState = node.ProgramState;
 
-            newProgramState = InvokeChecks(newProgramState, (ps, check) => check.PreProcessInstruction(node.ProgramPoint, ps));
-            if (newProgramState == null)
-            {
-                return;
-            }
+            newProgramState = ConstraintDecorators.Aggregate(newProgramState, (ps, decorator) => decorator.PreProcessInstruction(instruction, ps));
 
             switch (instruction.Kind())
             {
@@ -452,7 +435,11 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                     throw new NotImplementedException($"{instruction.Kind()}");
             }
 
+            newProgramState = ConstraintDecorators.Aggregate(newProgramState, 
+                (ps, decorator) => decorator.PostProcessInstruction(instruction, node.ProgramState, ps));
+
             newProgramState = EnsureStackState(parenthesizedExpression, newProgramState);
+
             OnInstructionProcessed(instruction, node.ProgramPoint, newProgramState);
             EnqueueNewNode(newProgramPoint, newProgramState);
         }
@@ -708,12 +695,9 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 
         private ProgramState VisitObjectCreation(ObjectCreationExpressionSyntax ctor, ProgramState programState)
         {
-            var newProgramState = InvokeChecks(programState, (ps, check) => check.ObjectCreating(ps, ctor));
-
-            var sv = new SymbolicValue();
-            newProgramState = newProgramState.PopValues(ctor.ArgumentList?.Arguments.Count ?? 0).PushValue(sv);
-
-            return InvokeChecks(newProgramState, (ps, check) => check.ObjectCreated(ps, sv, ctor));
+            return programState
+                .PopValues(ctor.ArgumentList?.Arguments.Count ?? 0)
+                .PushValue(new SymbolicValue());
         }
 
         private static ProgramState VisitInitializer(SyntaxNode instruction, ExpressionSyntax parenthesizedExpression, ProgramState programState)
