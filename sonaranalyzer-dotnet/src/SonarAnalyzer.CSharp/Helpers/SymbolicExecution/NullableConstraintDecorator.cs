@@ -31,12 +31,11 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         {
         }
 
-        public override ProgramState PostProcessInstruction(SyntaxNode instruction, ProgramState preProgramState,
-            ProgramState postProgramState)
+        public override ProgramState PostProcessInstruction(ExplodedGraphNode node, ProgramState programState)
         {
-            var newProgramState = postProgramState;
+            var newProgramState = programState;
 
-            switch (instruction.Kind())
+            switch (node.Instruction.Kind())
             {
                 case SyntaxKind.NullLiteralExpression:
                     break; // Constant literal expressions are already handled by exploded graph walker

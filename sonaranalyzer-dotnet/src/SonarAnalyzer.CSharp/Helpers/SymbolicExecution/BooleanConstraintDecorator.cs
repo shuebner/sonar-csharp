@@ -18,7 +18,6 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using SonarAnalyzer.Helpers.FlowAnalysis.Common;
 
@@ -31,12 +30,11 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         {
         }
 
-        public override ProgramState PostProcessInstruction(SyntaxNode instruction, ProgramState preProgramState,
-            ProgramState postProgramState)
+        public override ProgramState PostProcessInstruction(ExplodedGraphNode node, ProgramState programState)
         {
-            var newProgramState = postProgramState;
+            var newProgramState = programState;
 
-            switch (instruction.Kind())
+            switch (node.Instruction.Kind())
             {
                 case SyntaxKind.TrueLiteralExpression:
                 case SyntaxKind.FalseLiteralExpression:
@@ -45,7 +43,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.IsExpression:
                     {
                         SymbolicValue argSV;
-                        preProgramState.PopValue(out argSV);
+                        node.ProgramState.PopValue(out argSV);
                         if (argSV.HasConstraint(ObjectConstraint.Null, newProgramState))
                         {
                             var sv = newProgramState.ExpressionStack.Peek();

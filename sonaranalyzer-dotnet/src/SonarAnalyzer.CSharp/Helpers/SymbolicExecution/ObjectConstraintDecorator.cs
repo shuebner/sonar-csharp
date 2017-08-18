@@ -37,19 +37,18 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             SymbolicValue symbolicValue, ProgramState programState)
             => SetNonNullConstraintIfValueType(symbol, symbolicValue, programState);
 
-        public override ProgramState PostProcessInstruction(SyntaxNode instruction, ProgramState preProgramState,
-            ProgramState postProgramState)
+        public override ProgramState PostProcessInstruction(ExplodedGraphNode node, ProgramState programState)
         {
-            var newProgramState = postProgramState;
+            var newProgramState = programState;
 
-            switch (instruction.Kind())
+            switch (node.Instruction.Kind())
             {
                 case SyntaxKind.NullLiteralExpression:
                     break; // Constant literal expressions are already handled by exploded graph walker
 
                 case SyntaxKind.IdentifierName:
                     {
-                        var symbol = base.semanticModel.GetSymbolInfo(instruction).Symbol;
+                        var symbol = base.semanticModel.GetSymbolInfo(node.Instruction).Symbol;
 
                         if (base.explodedGraphWalker.IsSymbolTracked(symbol))
                         {
@@ -64,9 +63,9 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.PreIncrementExpression:
                 case SyntaxKind.PreDecrementExpression:
                     {
-                        var operand = instruction is PostfixUnaryExpressionSyntax
-                            ? ((PostfixUnaryExpressionSyntax)instruction).Operand
-                            : ((PrefixUnaryExpressionSyntax)instruction).Operand;
+                        var operand = node.Instruction is PostfixUnaryExpressionSyntax
+                            ? ((PostfixUnaryExpressionSyntax)node.Instruction).Operand
+                            : ((PrefixUnaryExpressionSyntax)node.Instruction).Operand;
                         var symbol = base.semanticModel.GetSymbolInfo(operand).Symbol;
 
                         if (base.explodedGraphWalker.IsSymbolTracked(symbol))
@@ -79,12 +78,12 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 
                 case SyntaxKind.VariableDeclarator:
                     {
-                        var symbol = base.semanticModel.GetDeclaredSymbol(instruction);
+                        var symbol = base.semanticModel.GetDeclaredSymbol(node.Instruction);
 
                         if (base.explodedGraphWalker.IsSymbolTracked(symbol) &&
                             !preProgramState.ExpressionStack.IsEmpty)
                         {
-                            var sv = preProgramState.ExpressionStack.Peek();
+                            var sv = node.ProgramState.ExpressionStack.Peek();
                             newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
                         }
                         break;
@@ -97,7 +96,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.AndAssignmentExpression:
                 case SyntaxKind.ExclusiveOrAssignmentExpression:
                     {
-                        var symbol = base.semanticModel.GetSymbolInfo(((AssignmentExpressionSyntax)instruction).Left).Symbol;
+                        var symbol = base.semanticModel.GetSymbolInfo(((AssignmentExpressionSyntax)node.Instruction).Left).Symbol;
 
                         if (base.explodedGraphWalker.IsSymbolTracked(symbol))
                         {
@@ -109,22 +108,22 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 
                 case SyntaxKind.DefaultExpression:
                     {
-                        var typeSymbol = base.semanticModel.GetTypeInfo(instruction).Type;
+                        var typeSymbol = base.semanticModel.GetTypeInfo(node.Instruction).Type;
                         var sv = newProgramState.ExpressionStack.Peek();
 
                         var isReferenceOrNullable = typeSymbol.IsReferenceType ||
                             typeSymbol.OriginalDefinition.Is(KnownType.System_Nullable_T);
 
                         newProgramState = isReferenceOrNullable
-                            ? sv.SetConstraint(ObjectConstraint.Null, postProgramState)
-                            : SetNonNullConstraintIfValueType(typeSymbol, sv, postProgramState);
+                            ? sv.SetConstraint(ObjectConstraint.Null, programState)
+                            : SetNonNullConstraintIfValueType(typeSymbol, sv, programState);
                         break;
                     }
 
                 case SyntaxKind.AsExpression:
                     {
                         SymbolicValue argSV;
-                        preProgramState.PopValue(out argSV);
+                        node.ProgramState.PopValue(out argSV);
                         if (argSV.HasConstraint(ObjectConstraint.Null, newProgramState))
                         {
                             var sv = newProgramState.ExpressionStack.Peek();
@@ -136,7 +135,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.SimpleMemberAccessExpression:
                 case SyntaxKind.PointerMemberAccessExpression:
                     {
-                        var typeSymbol = base.semanticModel.GetTypeInfo(instruction).Type;
+                        var typeSymbol = base.semanticModel.GetTypeInfo(node.Instruction).Type;
                         var sv = newProgramState.ExpressionStack.Peek();
                         newProgramState = SetNonNullConstraintIfValueType(typeSymbol, sv, newProgramState);
                         break;
@@ -145,7 +144,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.ObjectCreationExpression:
                     {
                         var sv = newProgramState.ExpressionStack.Peek();
-                        var symbol = this.semanticModel.GetSymbolInfo(instruction).Symbol as IMethodSymbol;
+                        var symbol = this.semanticModel.GetSymbolInfo(node.Instruction).Symbol as IMethodSymbol;
                         if (symbol != null)
                         {
                             newProgramState = IsEmptyNullableCtorCall(symbol)

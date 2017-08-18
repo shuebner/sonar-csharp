@@ -19,6 +19,7 @@
  */
 
 using System;
+using Microsoft.CodeAnalysis;
 
 namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 {
@@ -26,6 +27,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
     {
         public ProgramState ProgramState { get; }
         public ProgramPoint ProgramPoint { get; }
+        public SyntaxNode Instruction => ProgramPoint.Block.Instructions[ProgramPoint.Offset];
 
         public ExplodedGraphNode(ProgramPoint programPoint, ProgramState programState)
         {

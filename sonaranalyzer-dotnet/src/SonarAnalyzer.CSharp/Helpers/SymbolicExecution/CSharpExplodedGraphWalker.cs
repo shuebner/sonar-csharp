@@ -43,15 +43,15 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             : base(cfg, declaration, semanticModel, lva)
         {
             // Add mandatory checks
-            AddExplodedGraphCheck(new NullPointerDereference.NullPointerCheck(this));
-            AddExplodedGraphCheck(new EmptyNullableValueAccess.NullValueAccessedCheck(this));
-            AddExplodedGraphCheck(new InvalidCastToInterface.NullableCastCheck(this));
+            ////AddExplodedGraphCheck(new NullPointerDereference.NullPointerCheck(this));
+            ////AddExplodedGraphCheck(new EmptyNullableValueAccess.NullValueAccessedCheck(this));
+            ////AddExplodedGraphCheck(new InvalidCastToInterface.NullableCastCheck(this));
 
             decorators = ImmutableList.Create<ConstraintDecorator>(
-                new ObjectConstraintDecorator(this),
-                new NullableConstraintDecorator(this),
-                new BooleanConstraintDecorator(this),
-                new CollectionConstraintDecorator(this),
+                //new ObjectConstraintDecorator(this),
+                //new NullableConstraintDecorator(this),
+                //new BooleanConstraintDecorator(this),
+                //new CollectionConstraintDecorator(this),
                 new DisposableConstraintDecorator(this));
         }
 
@@ -166,7 +166,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             var newProgramState = node.ProgramState;
 
             newProgramState = ConstraintDecorators.Aggregate(newProgramState,
-                (ps, decorator) => decorator.PreProcessInstruction(instruction, ps));
+                (ps, decorator) => decorator.PreProcessInstruction(node, ps));
 
             switch (instruction.Kind())
             {
@@ -425,7 +425,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             }
 
             newProgramState = ConstraintDecorators.Aggregate(newProgramState,
-                (ps, decorator) => decorator.PostProcessInstruction(instruction, node.ProgramState, ps));
+                (ps, decorator) => decorator.PostProcessInstruction(node, ps));
 
             newProgramState = EnsureStackState(parenthesizedExpression, newProgramState);
 

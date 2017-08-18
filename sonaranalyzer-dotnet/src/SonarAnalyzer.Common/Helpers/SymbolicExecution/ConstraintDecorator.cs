@@ -43,6 +43,11 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
             var symbol = GetSymbol(syntaxNode);
             var symbolicValue = programState.GetSymbolValue(symbol);
 
+            if (symbolicValue == null)
+            {
+                return programState;
+            }
+
             explodedGraphWalker.Publish(new ConstraintAdding(programState, syntaxNode, symbolicValue, constraint));
 
             var newProgramState = symbolicValue.SetConstraint(constraint, programState);
@@ -56,12 +61,11 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
             SymbolicValue symbolicValue, ProgramState programState)
             => programState;
 
-        public virtual ProgramState PreProcessInstruction(SyntaxNode instruction, ProgramState programState)
+        public virtual ProgramState PreProcessInstruction(ExplodedGraphNode node, ProgramState programState)
             => programState;
 
-        public virtual ProgramState PostProcessInstruction(SyntaxNode instruction, ProgramState preProgramState,
-            ProgramState postProgramState)
-            => postProgramState;
+        public virtual ProgramState PostProcessInstruction(ExplodedGraphNode node, ProgramState programState)
+            => programState;
 
         public virtual ProgramState PreProcessBlock(Block block, ProgramState programState)
             => programState;
