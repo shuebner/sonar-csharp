@@ -40,18 +40,14 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         {
         }
 
-        public override ProgramState PostProcessInstruction(ExplodedGraphNode node,
-            ProgramState postProgramState)
+        public override ProgramState PostProcessInstruction(ExplodedGraphNode node, ProgramState programState)
         {
-            var instruction = node.ProgramPoint.Block.Instructions[node.ProgramPoint.Offset];
-            var preState = node.ProgramState;
-
-            switch (instruction.Kind())
+            switch (node.Instruction.Kind())
             {
                 case SyntaxKind.InvocationExpression:
-                    return VisitInvocationExpression((InvocationExpressionSyntax)instruction, postProgramState);
+                    return VisitInvocationExpression((InvocationExpressionSyntax)node.Instruction, programState);
                 default:
-                    return postProgramState;
+                    return programState;
             }
         }
 
