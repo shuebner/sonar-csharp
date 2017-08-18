@@ -34,6 +34,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
     internal class CSharpExplodedGraphWalker : AbstractExplodedGraphWalker
     {
         private readonly IEnumerable<ConstraintDecorator> decorators;
+        private readonly IEnumerable<ConstraintObserver> observers;
 
         protected override IEnumerable<ConstraintDecorator> ConstraintDecorators => decorators;
 
@@ -51,7 +52,19 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 new NullableConstraintDecorator(this),
                 new BooleanConstraintDecorator(this),
                 new CollectionConstraintDecorator(this),
-                new DisposableConstraintDecoratror(this));
+                new DisposableConstraintDecorator(this));
+
+            observers = ImmutableList.Create<ConstraintObserver>(
+                new DisposableConstraintObserver(node => { /* TODO */ }));
+        }
+
+        public override void Publish<T>(T value)
+        {
+            var observersOfT = observers.OfType<IObserver<T>>();
+            foreach (var observer in observersOfT)
+            {
+                observer.OnNext(value);
+            }
         }
 
         #region Visit*
@@ -355,7 +368,10 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.StackAllocArrayCreationExpression:
                     {
                         var sv = new SymbolicValue();
+                        newProgramState = sv.SetConstraint(ObjectConstraint.NotNull, newProgramState);
                         newProgramState = newProgramState.PushValue(sv);
+                        newProgramState = InvokeChecks(newProgramState,
+                            (ps, check) => check.ObjectCreated(ps, sv, instruction));
                     }
                     break;
 
@@ -366,8 +382,13 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.AnonymousObjectCreationExpression:
                     {
                         var creation = (AnonymousObjectCreationExpressionSyntax)instruction;
+                        newProgramState = newProgramState.PopValues(creation.Initializers.Count);
+
                         var sv = new SymbolicValue();
-                        newProgramState = newProgramState.PopValues(creation.Initializers.Count).PushValue(sv);
+                        newProgramState = sv.SetConstraint(ObjectConstraint.NotNull, newProgramState);
+                        newProgramState = newProgramState.PushValue(sv);
+                        newProgramState = InvokeChecks(newProgramState,
+                            (ps, check) => check.ObjectCreated(ps, sv, instruction));
                     }
                     break;
 

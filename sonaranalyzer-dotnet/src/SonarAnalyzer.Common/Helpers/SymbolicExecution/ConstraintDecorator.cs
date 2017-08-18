@@ -30,35 +30,24 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
         internal ConstraintDecorator(AbstractExplodedGraphWalker explodedGraphWalker)
         {
             this.explodedGraphWalker = explodedGraphWalker;
-            this.semanticModel = explodedGraphWalker.SemanticModel;
+            semanticModel = explodedGraphWalker.SemanticModel;
         }
 
         protected ISymbol GetSymbol(SyntaxNode syntaxNode) =>
-            this.semanticModel.GetDeclaredSymbol(syntaxNode) ??
-            this.semanticModel.GetSymbolInfo(syntaxNode).Symbol;
-
-        private void OnConstraintApplying(ProgramState programState, SyntaxNode syntaxNode,
-            SymbolicValueConstraint constraint)
-        {
-            ////explodedGraphWalker.InvokeListeners();
-        }
-
-        private void OnConstraintApplied(ProgramState newProgramState, SyntaxNode syntaxNode,
-            SymbolicValueConstraint constraint)
-        {
-            ////explodedGraphWalker.InvokeListeners();
-        }
+            semanticModel.GetDeclaredSymbol(syntaxNode) ??
+            semanticModel.GetSymbolInfo(syntaxNode).Symbol;
 
         protected ProgramState SetConstraint(ProgramState programState, SyntaxNode syntaxNode,
             SymbolicValueConstraint constraint)
         {
             var symbol = GetSymbol(syntaxNode);
+            var symbolicValue = programState.GetSymbolValue(symbol);
 
-            OnConstraintApplying(programState, syntaxNode, constraint);
-            // TODO: FIX ME
-            var newProgramState = programState;
-            //var newProgramState = symbol.SetConstraint(constraint, programState);
-            OnConstraintApplied(newProgramState, syntaxNode, constraint);
+            explodedGraphWalker.Publish(new ConstraintAdding(programState, syntaxNode, symbolicValue, constraint));
+
+            var newProgramState = symbolicValue.SetConstraint(constraint, programState);
+
+            explodedGraphWalker.Publish(new ConstraintAdded(newProgramState, syntaxNode, symbolicValue, constraint, programState));
 
             return newProgramState;
         }
