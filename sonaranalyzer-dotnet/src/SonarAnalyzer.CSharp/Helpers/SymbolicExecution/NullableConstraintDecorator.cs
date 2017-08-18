@@ -18,6 +18,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using SonarAnalyzer.Helpers.FlowAnalysis.Common;
 
 namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
@@ -27,6 +29,25 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         public NullableConstraintDecorator(CSharpExplodedGraphWalker explodedGraphWalker)
             : base(explodedGraphWalker)
         {
+        }
+
+        public override ProgramState PostProcessInstruction(SyntaxNode instruction, ProgramState preProgramState,
+            ProgramState postProgramState)
+        {
+            var newProgramState = postProgramState;
+
+            switch (instruction.Kind())
+            {
+                case SyntaxKind.NullLiteralExpression:
+                    break; // Constant literal expressions are already handled by exploded graph walker
+
+                case SyntaxKind.IdentifierName:
+                    {
+                        break;
+                    }
+            }
+
+            return newProgramState;
         }
     }
 }
