@@ -688,7 +688,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 }
                 else
                 {
-                    sv = SymbolicValue.Create(typeSymbol);
+                    sv = new SymbolicValue();
                 }
             }
             newProgramState = newProgramState.PushValue(sv);
@@ -701,7 +701,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 return newProgramState;
             }
 
-            sv = SymbolicValue.Create(typeSymbol);
+            sv = new SymbolicValue();
             newProgramState = newProgramState
                 .PopValue()
                 .PushValue(sv);

@@ -29,13 +29,13 @@ namespace SonarAnalyzer.UnitTest.Helpers.FlowAnalysis
     public class NullableSymbolicValue_TrySetConstraint
     {
         private SymbolicValue sv_w;
-        private NullableSymbolicValue sv_0;
+        private SymbolicValue sv_0;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            sv_w = SymbolicValue.Create();
-            sv_0 = new NullableSymbolicValue(sv_w);
+            sv_w = new SymbolicValue();
+            sv_0 = new SymbolicValue(sv_w);
         }
 
         [TestMethod]
