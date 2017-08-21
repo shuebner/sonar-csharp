@@ -123,6 +123,7 @@ namespace Tests.Diagnostics
         public void DisposeMultipleTimes()
         {
             Dispose();
+            (this as IDisposable).Dispose(); // Noncompliant
             this.Dispose(); // Noncompliant
             Dispose(); // Noncompliant
         }

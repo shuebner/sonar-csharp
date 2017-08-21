@@ -37,22 +37,16 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
             SemanticModel.GetDeclaredSymbol(syntaxNode) ??
             SemanticModel.GetSymbolInfo(syntaxNode).Symbol;
 
-        protected ProgramState SetConstraint(ProgramState programState, SyntaxNode syntaxNode,
-            SymbolicValueConstraint constraint)
+        protected ProgramState SetConstraint(SymbolicValue symbolicValue, SymbolicValueConstraint constraint,
+            SyntaxNode syntaxNode, ProgramState programState)
         {
-            var symbol = GetSymbol(syntaxNode);
-            var symbolicValue = programState.GetSymbolValue(symbol);
-
-            if (symbolicValue == null)
-            {
-                return programState;
-            }
-
-            ExplodedGraphWalker.Publish(new ConstraintAdding(programState, syntaxNode, symbolicValue, constraint));
+            ExplodedGraphWalker.Publish(
+                new ConstraintAdding(symbolicValue, constraint, syntaxNode, programState));
 
             var newProgramState = symbolicValue.SetConstraint(constraint, programState);
 
-            ExplodedGraphWalker.Publish(new ConstraintAdded(newProgramState, syntaxNode, symbolicValue, constraint, programState));
+            ExplodedGraphWalker.Publish(
+                new ConstraintAdded(symbolicValue, constraint, syntaxNode, newProgramState, programState));
 
             return newProgramState;
         }

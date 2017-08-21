@@ -10,8 +10,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis
         public SymbolicValue SymbolicValue { get; }
         public SymbolicValueConstraint Constraint { get; }
 
-        public ConstraintAdding(ProgramState programState, SyntaxNode instruction, SymbolicValue symbolicValue,
-            SymbolicValueConstraint constraint)
+        public ConstraintAdding(SymbolicValue symbolicValue, SymbolicValueConstraint constraint, SyntaxNode instruction,
+            ProgramState programState)
         {
             ProgramState = programState;
             Instruction = instruction;
@@ -28,8 +28,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis
         public SymbolicValueConstraint Constraint { get; }
         public ProgramState PreviousProgramState { get; }
 
-        public ConstraintAdded(ProgramState programState, SyntaxNode instruction, SymbolicValue symbolicValue,
-            SymbolicValueConstraint constraint, ProgramState previousProgramState)
+        public ConstraintAdded(SymbolicValue symbolicValue, SymbolicValueConstraint constraint, SyntaxNode instruction,
+            ProgramState programState, ProgramState previousProgramState)
         {
             ProgramState = programState;
             Instruction = instruction;

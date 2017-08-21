@@ -45,7 +45,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             switch (node.Instruction.Kind())
             {
                 case SyntaxKind.InvocationExpression:
-                    return VisitInvocationExpression((InvocationExpressionSyntax)node.Instruction, programState);
+                    return VisitInvocationExpression((InvocationExpressionSyntax)node.Instruction, programState, node.ProgramState);
                 default:
                     return programState;
             }
@@ -69,11 +69,35 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             return programState;
         }
 
-        private ProgramState SetDisposed(ProgramState programState, SyntaxNode syntaxNode) =>
-            SetConstraint(programState, syntaxNode, DisposableConstraint.Disposed);
+        private ProgramState VisitInvocationExpression(InvocationExpressionSyntax invocationExpression, ProgramState programState,
+            ProgramState preProgramState)
+        {
+            var invokedMethodSymbol = GetSymbol(invocationExpression) as IMethodSymbol;
+            if (invokedMethodSymbol.IsIDisposableDispose())
+            {
+                switch (invocationExpression.Expression.Kind())
+                {
+                    case SyntaxKind.IdentifierName:
+                    case SyntaxKind.ThisExpression:
+                    case SyntaxKind.BaseExpression:
+                    case SyntaxKind.SimpleMemberAccessExpression:
+                        return SetDisposed(programState, invocationExpression.Expression, preProgramState.PeekValue());
+                    default:
+                        return programState;
+                }
+            }
 
-        private ProgramState SetDisposed(ProgramState programState, SymbolicValue symbolicValue) =>
-            symbolicValue.SetConstraint(DisposableConstraint.Disposed, programState);
+            return programState;
+        }
+
+        private ProgramState SetDisposed(ProgramState programState, SyntaxNode syntaxNode)
+        {
+            var symbolicValue = programState.GetSymbolValue(GetSymbol(syntaxNode));
+            return SetConstraint(symbolicValue, DisposableConstraint.Disposed, syntaxNode, programState);
+        }
+
+        private ProgramState SetDisposed(ProgramState programState, SyntaxNode syntaxNode, SymbolicValue symbolicValue) =>
+            SetConstraint(symbolicValue, DisposableConstraint.Disposed, syntaxNode, programState);
 
         private IEnumerable<SyntaxNode> GetUsedStreamIdentifiers(SyntaxNode usingExpression) =>
             usingExpression.DescendantNodes()
@@ -89,26 +113,5 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             GetSymbol(objectCreation.Type)
                 .GetSymbolType()
                 .DerivesOrImplementsAny(typesDisposingUnderlyingStream);
-
-        private ProgramState VisitInvocationExpression(InvocationExpressionSyntax instruction, ProgramState programState)
-        {
-            var methodSymbol = GetSymbol(instruction) as IMethodSymbol;
-            if (methodSymbol.IsIDisposableDispose())
-            {
-                var methodIdentifier = instruction.Expression as IdentifierNameSyntax;
-                if (methodIdentifier != null)
-                {
-                    return SetDisposed(programState, SymbolicValue.This);
-                }
-
-                var memberAccessExpression = instruction.Expression as MemberAccessExpressionSyntax;
-                if (memberAccessExpression?.Expression != null)
-                {
-                    return SetDisposed(programState, memberAccessExpression.Expression);
-                }
-            }
-
-            return programState;
-        }
     }
 }
