@@ -29,6 +29,23 @@ namespace SonarAnalyzer.UnitTest.Rules
     {
         [TestMethod]
         [TestCategory("Rule")]
+        public void NullPointerDereference1()
+        {
+            Verifier.VerifyCSharpAnalyzer(@"
+class Foo
+{
+    void Bar()
+    {
+        object o = null;
+        var x = o.ToString();
+    }
+}",
+                new NullPointerDereference());
+        }
+
+
+        [TestMethod]
+        [TestCategory("Rule")]
         public void NullPointerDereference()
         {
             Verifier.VerifyAnalyzer(@"TestCases\NullPointerDereference.cs",

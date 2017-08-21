@@ -657,8 +657,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         private static ProgramState VisitInitializer(SyntaxNode instruction, ExpressionSyntax parenthesizedExpression,
             ProgramState programState)
         {
-            var init = (InitializerExpressionSyntax)instruction;
-            var newProgramState = programState.PopValues(init.Expressions.Count);
+            var initializer = (InitializerExpressionSyntax)instruction;
+            var newProgramState = programState.PopValues(initializer.Expressions.Count);
 
             if (!(parenthesizedExpression.Parent is ObjectCreationExpressionSyntax) &&
                 !(parenthesizedExpression.Parent is ArrayCreationExpressionSyntax) &&
@@ -710,9 +710,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         private ProgramState VisitPostfixIncrement(PostfixUnaryExpressionSyntax unary, ProgramState programState)
         {
             var symbol = SemanticModel.GetSymbolInfo(unary.Operand).Symbol;
-            var sv = new SymbolicValue();
 
-            return StoreSymbolicValueIfSymbolIsTracked(symbol, sv, programState);
+            return StoreSymbolicValueIfSymbolIsTracked(symbol, new SymbolicValue(), programState);
         }
 
         private ProgramState VisitPrefixIncrement(PrefixUnaryExpressionSyntax unary, ProgramState programState)

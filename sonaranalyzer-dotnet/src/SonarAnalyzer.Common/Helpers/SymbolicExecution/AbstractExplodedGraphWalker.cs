@@ -361,13 +361,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
             var initialProgramState = new ProgramState();
             foreach (var parameter in declarationParameters)
             {
-                var sv = new SymbolicValue();
-                initialProgramState = initialProgramState.StoreSymbolicValue(parameter, sv);
-                foreach (var decorator in ConstraintDecorators)
-                {
-                    initialProgramState =
-                        decorator.PostProcessDeclarationParameters(parameter, sv, initialProgramState);
-                }
+                initialProgramState = initialProgramState.StoreSymbolicValue(parameter, new SymbolicValue());
             }
 
             EnqueueNewNode(new ProgramPoint(cfg.EntryBlock), initialProgramState);

@@ -55,6 +55,12 @@ namespace Tests.Diagnostics
             var y = x.Value; // Compliant - we don't know whether x has value or not
         }
 
+        void Foo6()
+        {
+            int? i = 1;
+            var x = (int)i;
+        }
+
         void Nameof(object o)
         {
             if (o == null)

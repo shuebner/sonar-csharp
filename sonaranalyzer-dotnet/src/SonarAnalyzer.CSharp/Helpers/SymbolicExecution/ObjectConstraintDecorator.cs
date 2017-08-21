@@ -148,9 +148,9 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.SimpleMemberAccessExpression:
                 case SyntaxKind.PointerMemberAccessExpression:
                     {
-                        var typeSymbol = SemanticModel.GetTypeInfo(node.Instruction).Type;
+                        var symbol = SemanticModel.GetSymbolInfo(node.Instruction).Symbol;
                         var sv = newProgramState.ExpressionStack.Peek();
-                        newProgramState = SetNonNullConstraintIfValueType(typeSymbol, sv, node.Instruction, newProgramState);
+                        newProgramState = SetNonNullConstraintIfValueType(symbol, sv, node.Instruction, newProgramState);
                         break;
                     }
 
