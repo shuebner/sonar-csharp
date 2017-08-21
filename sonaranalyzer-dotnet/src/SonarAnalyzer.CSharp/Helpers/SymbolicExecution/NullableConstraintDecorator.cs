@@ -51,7 +51,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                         {
                             var typeSymbol = SemanticModel.GetTypeInfo(memberAccess).Type;
                             var sv = newProgramState.ExpressionStack.Peek();
-                            newProgramState = sv.SetConstraint(NullableValueConstraint.HasValue, newProgramState);
+                            newProgramState = SetConstraint(sv, NullableValueConstraint.HasValue, memberAccess,
+                                newProgramState);
                         }
                         break;
                     }
@@ -60,42 +61,65 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                     {
                         var sv = newProgramState.ExpressionStack.Peek();
                         var methodSymbol = SemanticModel.GetSymbolInfo(node.Instruction).Symbol as IMethodSymbol;
+
                         if (methodSymbol != null &&
                             IsNullableCtorCall(methodSymbol))
                         {
-                            newProgramState = methodSymbol.Parameters.Length == 0
-                                ? sv.SetConstraint(NullableValueConstraint.NoValue, newProgramState)
-                                : sv.SetConstraint(NullableValueConstraint.HasValue, newProgramState);
+                            var constraintToApply = methodSymbol.Parameters.Length == 0
+                                ? NullableValueConstraint.NoValue
+                                : NullableValueConstraint.HasValue;
+                            newProgramState = SetConstraint(sv, constraintToApply, node.Instruction, newProgramState);
                         }
+                        break;
+                    }
+
+                case SyntaxKind.SimpleAssignmentExpression:
+                    {
+                        var symbol = SemanticModel.GetSymbolInfo(node.Instruction).Symbol;
+                        newProgramState = SetConstraintIfTracked(node.Instruction, symbol, newProgramState);
                         break;
                     }
 
                 case SyntaxKind.VariableDeclarator:
                     {
-                        var varDeclarator = (VariableDeclaratorSyntax)node.Instruction;
+                        var variableDeclarator = (VariableDeclaratorSyntax)node.Instruction;
                         var symbol = SemanticModel.GetDeclaredSymbol(node.Instruction);
 
-                        if (varDeclarator.Initializer?.Value != null &&
-                            ExplodedGraphWalker.IsSymbolTracked(symbol) &&
-                            symbol.GetSymbolType().OriginalDefinition.Is(KnownType.System_Nullable_T))
+                        if (variableDeclarator.Initializer?.Value != null)
                         {
-                            var sv = node.ProgramState.ExpressionStack.Peek();
-
-                            if (sv.HasConstraint(ObjectConstraint.NotNull, newProgramState))
-                            {
-                                newProgramState = sv.SetConstraint(NullableValueConstraint.HasValue, newProgramState);
-                            }
-
-                            if (sv.HasConstraint(ObjectConstraint.Null, newProgramState))
-                            {
-                                newProgramState = sv.SetConstraint(NullableValueConstraint.NoValue, newProgramState);
-                            }
+                            newProgramState = SetConstraintIfTracked(variableDeclarator, symbol, newProgramState);
                         }
                         break;
                     }
             }
 
             return newProgramState;
+        }
+
+        private ProgramState SetConstraintIfTracked(SyntaxNode node, ISymbol symbol, ProgramState programState)
+        {
+            if (!ExplodedGraphWalker.IsSymbolTracked(symbol) ||
+                !symbol.IsNullable())
+            {
+                return programState;
+            }
+
+            var sv = programState.GetSymbolValue(symbol);
+            if (sv.InnerSymbolicValue == null)
+            {
+                return programState;
+            }
+
+            if (sv.InnerSymbolicValue.HasConstraint(ObjectConstraint.Null, programState))
+            {
+                return SetConstraint(sv, NullableValueConstraint.NoValue, node, programState);
+            }
+            else if (sv.InnerSymbolicValue.HasConstraint(ObjectConstraint.NotNull, programState))
+            {
+                return SetConstraint(sv, NullableValueConstraint.HasValue, node, programState);
+            }
+
+            return programState;
         }
 
         private bool IsValuePropertyAccess(MemberAccessExpressionSyntax memberAccess)

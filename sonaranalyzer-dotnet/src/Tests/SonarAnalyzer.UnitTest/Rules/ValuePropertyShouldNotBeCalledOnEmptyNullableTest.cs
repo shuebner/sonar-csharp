@@ -31,11 +31,12 @@ namespace SonarAnalyzer.UnitTest.Rules
         public void ValuePropertyShouldNotBeCalledOnEmptyNullable1()
         {
             Verifier.VerifyCSharpAnalyzer(@"
+using System;
 public class Foo
 {
-    public void T()
+    public void T(int? x)
     {
-        int? x = null;
+        x = 12;
     }
 }",
                 new ValuePropertyShouldNotBeCalledOnEmptyNullable());

@@ -33,7 +33,7 @@ namespace SonarAnalyzer.Rules.CSharp
     public class ValuePropertyShouldNotBeCalledOnEmptyNullable : SonarDiagnosticAnalyzer
     {
         internal const string DiagnosticId = "S3655";
-        private const string MessageFormat = "'{0}' is empty on at least one execution path.";
+        private const string MessageFormat = "'{0}' has no value on at least one execution path.";
 
         private static readonly DiagnosticDescriptor rule =
             DiagnosticDescriptorBuilder.GetDescriptor(DiagnosticId, MessageFormat, RspecStrings.ResourceManager);

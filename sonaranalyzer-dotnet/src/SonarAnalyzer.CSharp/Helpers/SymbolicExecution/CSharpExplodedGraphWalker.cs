@@ -746,30 +746,45 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             {
                 newProgramState = newProgramState.PopValue();
             }
-            newProgramState = newProgramState.PushValue(sv);
 
             var leftSymbol = SemanticModel.GetSymbolInfo(assignment.Left).Symbol;
+            if (leftSymbol.IsNullable())
+            {
+                sv = new SymbolicValue(sv);
+            }
+
+            newProgramState = newProgramState.PushValue(sv);
+
             return StoreSymbolicValueIfSymbolIsTracked(leftSymbol, sv, newProgramState);
         }
 
         private ProgramState VisitVariableDeclarator(VariableDeclaratorSyntax declarator, ProgramState programState)
         {
-            var newProgramState = programState;
-
-            var sv = new SymbolicValue();
-            if (declarator.Initializer?.Value != null)
+            if (declarator.Initializer?.Value == null)
             {
-                newProgramState = newProgramState.PopValue(out sv);
+                return programState;
             }
+
+            SymbolicValue sv;
+            var newProgramState = programState.PopValue(out sv);
 
             var leftSymbol = SemanticModel.GetDeclaredSymbol(declarator);
-            if (leftSymbol != null &&
-                IsSymbolTracked(leftSymbol))
+            var rightSymbol = SemanticModel.GetSymbolInfo(declarator.Initializer.Value).Symbol;
+
+            if (leftSymbol == null ||
+                (rightSymbol == null && sv == null) ||
+                !IsSymbolTracked(leftSymbol))
             {
-                newProgramState = newProgramState.StoreSymbolicValue(leftSymbol, sv);
+                return programState;
             }
 
-            return newProgramState;
+            if (leftSymbol.IsNullable() &&
+                (!rightSymbol.IsNullable() || (rightSymbol == null && sv != null)))
+            {
+                sv = new SymbolicValue(sv);
+            }
+
+            return newProgramState.StoreSymbolicValue(leftSymbol, sv);
         }
 
         #endregion

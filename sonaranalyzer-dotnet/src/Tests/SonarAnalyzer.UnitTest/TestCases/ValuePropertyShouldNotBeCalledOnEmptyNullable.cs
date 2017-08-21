@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Tests.Diagnostics
 {
-    public class EmptyNullableValueAccess
+    public class ValuePropertyShouldNotBeCalledOnEmptyNullable
     {
         protected override void LogFailure(Exception e)
         {
@@ -25,6 +25,24 @@ namespace Tests.Diagnostics
         private class TestClass
         {
             public int? Number { get; set; }
+        }
+
+        void Foo1()
+        {
+            int? i = null;
+            var x = i.Value; // Noncompliant
+        }
+
+        void Foo2()
+        {
+            int? i = 42;
+            var x = i.Value;
+        }
+
+        void Foo3(int? x)
+        {
+            int? i = x;
+            var y = i.Value; // Compliant - we don't know whether x has value or not
         }
 
         void Nameof(object o)
@@ -52,7 +70,7 @@ namespace Tests.Diagnostics
                 Console.WriteLine(i1.Value);
             }
 
-            Console.WriteLine(i1.Value); // Noncompliant {{'i1' is null on at least one execution path.}}
+            Console.WriteLine(i1.Value); // Noncompliant {{'i1' has no value on at least one execution path.}}
 //                            ^^^^^^^^
         }
 

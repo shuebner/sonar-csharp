@@ -282,5 +282,8 @@ namespace SonarAnalyzer.Helpers
             var symbolType = semanticModel.GetDeclaredSymbol(syntaxNode)?.GetSymbolType();
             return symbolType.Is(knownType);
         }
+
+        public static bool IsNullable(this ISymbol symbol) =>
+            symbol.GetSymbolType()?.OriginalDefinition.Is(KnownType.System_Nullable_T) == true;
     }
 }
