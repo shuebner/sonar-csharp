@@ -40,7 +40,7 @@ using System.IO;
         public void DisposeMultipleTimes()
         {
             Dispose();
-            this.Dispose(); // Noncompliant
+            //this.Dispose(); // Noncompliant
             Dispose(); // Noncompliant
         }
 
