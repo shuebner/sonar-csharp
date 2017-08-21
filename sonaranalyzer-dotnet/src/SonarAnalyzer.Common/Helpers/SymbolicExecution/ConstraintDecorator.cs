@@ -24,18 +24,18 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 {
     internal class ConstraintDecorator
     {
-        protected readonly AbstractExplodedGraphWalker explodedGraphWalker;
-        protected readonly SemanticModel semanticModel;
+        protected AbstractExplodedGraphWalker ExplodedGraphWalker { get; }
+        protected SemanticModel SemanticModel { get; }
 
         internal ConstraintDecorator(AbstractExplodedGraphWalker explodedGraphWalker)
         {
-            this.explodedGraphWalker = explodedGraphWalker;
-            semanticModel = explodedGraphWalker.SemanticModel;
+            ExplodedGraphWalker = explodedGraphWalker;
+            SemanticModel = explodedGraphWalker.SemanticModel;
         }
 
         protected ISymbol GetSymbol(SyntaxNode syntaxNode) =>
-            semanticModel.GetDeclaredSymbol(syntaxNode) ??
-            semanticModel.GetSymbolInfo(syntaxNode).Symbol;
+            SemanticModel.GetDeclaredSymbol(syntaxNode) ??
+            SemanticModel.GetSymbolInfo(syntaxNode).Symbol;
 
         protected ProgramState SetConstraint(ProgramState programState, SyntaxNode syntaxNode,
             SymbolicValueConstraint constraint)
@@ -48,11 +48,11 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
                 return programState;
             }
 
-            explodedGraphWalker.Publish(new ConstraintAdding(programState, syntaxNode, symbolicValue, constraint));
+            ExplodedGraphWalker.Publish(new ConstraintAdding(programState, syntaxNode, symbolicValue, constraint));
 
             var newProgramState = symbolicValue.SetConstraint(constraint, programState);
 
-            explodedGraphWalker.Publish(new ConstraintAdded(newProgramState, syntaxNode, symbolicValue, constraint, programState));
+            ExplodedGraphWalker.Publish(new ConstraintAdded(newProgramState, syntaxNode, symbolicValue, constraint, programState));
 
             return newProgramState;
         }

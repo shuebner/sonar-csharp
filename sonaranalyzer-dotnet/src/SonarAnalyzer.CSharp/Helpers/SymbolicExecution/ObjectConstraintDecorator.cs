@@ -18,7 +18,6 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -48,9 +47,9 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 
                 case SyntaxKind.IdentifierName:
                     {
-                        var symbol = base.semanticModel.GetSymbolInfo(node.Instruction).Symbol;
+                        var symbol = SemanticModel.GetSymbolInfo(node.Instruction).Symbol;
 
-                        if (base.explodedGraphWalker.IsSymbolTracked(symbol))
+                        if (ExplodedGraphWalker.IsSymbolTracked(symbol))
                         {
                             var sv = newProgramState.ExpressionStack.Peek();
                             newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
@@ -66,9 +65,9 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                         var operand = node.Instruction is PostfixUnaryExpressionSyntax
                             ? ((PostfixUnaryExpressionSyntax)node.Instruction).Operand
                             : ((PrefixUnaryExpressionSyntax)node.Instruction).Operand;
-                        var symbol = base.semanticModel.GetSymbolInfo(operand).Symbol;
+                        var symbol = SemanticModel.GetSymbolInfo(operand).Symbol;
 
-                        if (base.explodedGraphWalker.IsSymbolTracked(symbol))
+                        if (ExplodedGraphWalker.IsSymbolTracked(symbol))
                         {
                             var sv = newProgramState.ExpressionStack.Peek();
                             newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
@@ -78,10 +77,11 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 
                 case SyntaxKind.VariableDeclarator:
                     {
-                        var symbol = base.semanticModel.GetDeclaredSymbol(node.Instruction);
+                        var varDeclarator = (VariableDeclaratorSyntax)node.Instruction;
+                        var symbol = SemanticModel.GetDeclaredSymbol(node.Instruction);
 
-                        if (base.explodedGraphWalker.IsSymbolTracked(symbol) &&
-                            !preProgramState.ExpressionStack.IsEmpty)
+                        if (varDeclarator.Initializer?.Value != null &&
+                            ExplodedGraphWalker.IsSymbolTracked(symbol))
                         {
                             var sv = node.ProgramState.ExpressionStack.Peek();
                             newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
@@ -96,9 +96,10 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.AndAssignmentExpression:
                 case SyntaxKind.ExclusiveOrAssignmentExpression:
                     {
-                        var symbol = base.semanticModel.GetSymbolInfo(((AssignmentExpressionSyntax)node.Instruction).Left).Symbol;
+                        var assignment = (AssignmentExpressionSyntax)node.Instruction;
+                        var symbol = SemanticModel.GetSymbolInfo(assignment.Left).Symbol;
 
-                        if (base.explodedGraphWalker.IsSymbolTracked(symbol))
+                        if (ExplodedGraphWalker.IsSymbolTracked(symbol))
                         {
                             var sv = newProgramState.ExpressionStack.Peek();
                             newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
@@ -108,7 +109,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 
                 case SyntaxKind.DefaultExpression:
                     {
-                        var typeSymbol = base.semanticModel.GetTypeInfo(node.Instruction).Type;
+                        var typeSymbol = SemanticModel.GetTypeInfo(node.Instruction).Type;
                         var sv = newProgramState.ExpressionStack.Peek();
 
                         var isReferenceOrNullable = typeSymbol.IsReferenceType ||
@@ -135,25 +136,13 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.SimpleMemberAccessExpression:
                 case SyntaxKind.PointerMemberAccessExpression:
                     {
-                        var typeSymbol = base.semanticModel.GetTypeInfo(node.Instruction).Type;
+                        var typeSymbol = SemanticModel.GetTypeInfo(node.Instruction).Type;
                         var sv = newProgramState.ExpressionStack.Peek();
                         newProgramState = SetNonNullConstraintIfValueType(typeSymbol, sv, newProgramState);
                         break;
                     }
 
                 case SyntaxKind.ObjectCreationExpression:
-                    {
-                        var sv = newProgramState.ExpressionStack.Peek();
-                        var symbol = this.semanticModel.GetSymbolInfo(node.Instruction).Symbol as IMethodSymbol;
-                        if (symbol != null)
-                        {
-                            newProgramState = IsEmptyNullableCtorCall(symbol)
-                                ? sv.SetConstraint(ObjectConstraint.Null, newProgramState)
-                                : sv.SetConstraint(ObjectConstraint.NotNull, newProgramState);
-                        }
-                        break;
-                    }
-
                 case SyntaxKind.AnonymousObjectCreationExpression:
                 case SyntaxKind.StackAllocArrayCreationExpression:
                     {
@@ -174,7 +163,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             if (binaryBranchBlock != null &&
                 binaryBranchBlock.BranchingNode.IsKind(SyntaxKind.ForEachStatement))
             {
-                var foreachVariableSymbol = this.semanticModel.GetDeclaredSymbol(binaryBranchBlock.BranchingNode);
+                var foreachVariableSymbol = SemanticModel.GetDeclaredSymbol(binaryBranchBlock.BranchingNode);
                 var sv = newProgramState.ExpressionStack.Peek();
                 newProgramState = SetNonNullConstraintIfValueType(foreachVariableSymbol, sv, newProgramState);
             }
@@ -185,10 +174,15 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         private static ProgramState SetNonNullConstraintIfValueType(ITypeSymbol typeSymbol,
             SymbolicValue symbolicValue, ProgramState programState)
         {
-            var isDefinitelyNotNull = !symbolicValue.HasConstraint(ObjectConstraint.NotNull, programState) &&
-                IsNonNullableValueType(typeSymbol) &&
-                !IsValueTypeWithOverloadedNullCompatibleOpEquals(typeSymbol) &&
-                !IsPointer(typeSymbol);
+            if (symbolicValue.HasConstraint(ObjectConstraint.NotNull, programState))
+            {
+                return programState;
+            }
+
+            var isDefinitelyNotNull = symbolicValue != SymbolicValue.Null &&
+                typeSymbol != null &&
+                typeSymbol.IsValueType &&
+                typeSymbol.TypeKind != TypeKind.Pointer;
 
             return isDefinitelyNotNull
                 ? symbolicValue.SetConstraint(ObjectConstraint.NotNull, programState)
@@ -199,46 +193,6 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             ProgramState programState)
         {
             return SetNonNullConstraintIfValueType(symbol.GetSymbolType(), symbolicValue, programState);
-        }
-
-        private static bool IsPointer(ITypeSymbol typeSymbol)
-        {
-            return typeSymbol?.TypeKind == TypeKind.Pointer;
-        }
-
-        private static bool IsValueTypeWithOverloadedNullCompatibleOpEquals(ITypeSymbol type)
-        {
-            return type != null &&
-                type.IsValueType &&
-                type.GetMembers("op_Equality")
-                    .OfType<IMethodSymbol>()
-                    .Any(m => m.Parameters.Any(p => IsNullCompatibleType(p.Type)));
-        }
-
-        private static bool IsNullCompatibleType(ITypeSymbol type)
-        {
-            if (type == null)
-            {
-                return false;
-            }
-
-            return !type.IsValueType ||
-                type.OriginalDefinition.Is(KnownType.System_Nullable_T);
-        }
-
-        private static bool IsNonNullableValueType(ITypeSymbol type)
-        {
-            return type != null &&
-                type.IsValueType &&
-                !type.OriginalDefinition.Is(KnownType.System_Nullable_T);
-        }
-
-        private static bool IsEmptyNullableCtorCall(IMethodSymbol nullableConstructorCall)
-        {
-            return nullableConstructorCall != null &&
-                nullableConstructorCall.MethodKind == MethodKind.Constructor &&
-                nullableConstructorCall.ReceiverType.OriginalDefinition.Is(KnownType.System_Nullable_T) &&
-                nullableConstructorCall.Parameters.Length == 0;
         }
     }
 }

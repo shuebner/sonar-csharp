@@ -18,16 +18,11 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using SonarAnalyzer.Common;
 using SonarAnalyzer.Helpers;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
 using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
 using CSharpExplodedGraphWalker = SonarAnalyzer.Helpers.FlowAnalysis.CSharp.CSharpExplodedGraphWalker;
 
@@ -52,53 +47,53 @@ namespace SonarAnalyzer.Rules.CSharp
 
         private static void CheckForNullDereference(CSharpExplodedGraphWalker explodedGraph, SyntaxNodeAnalysisContext context)
         {
-            if (context.IsTest())
-            {
-                return;
-            }
+            //if (context.IsTest())
+            //{
+            //    return;
+            //}
 
-            var methodSymbol = context.SemanticModel.GetSymbolInfo(context.Node).Symbol
-                ?? context.SemanticModel.GetDeclaredSymbol(context.Node);
+            //var methodSymbol = context.SemanticModel.GetSymbolInfo(context.Node).Symbol
+            //    ?? context.SemanticModel.GetDeclaredSymbol(context.Node);
 
-            if (!methodSymbol.IsPubliclyAccessible())
-            {
-                return;
-            }
+            //if (!methodSymbol.IsPubliclyAccessible())
+            //{
+            //    return;
+            //}
 
-            var nullPointerCheck = new NullPointerDereference.NullPointerCheck(explodedGraph);
-            explodedGraph.AddExplodedGraphCheck(nullPointerCheck);
+            //var nullPointerCheck = new NullPointerDereference.NullPointerCheck(explodedGraph);
+            //explodedGraph.AddExplodedGraphCheck(nullPointerCheck);
 
-            var identifiers = new HashSet<IdentifierNameSyntax>();
+            //var identifiers = new HashSet<IdentifierNameSyntax>();
 
-            EventHandler<MemberAccessingEventArgs> memberAccessingHandler =
-                (sender, args) => CollectMemberAccesses(args, identifiers, context.SemanticModel);
+            //EventHandler<MemberAccessingEventArgs> memberAccessingHandler =
+            //    (sender, args) => CollectMemberAccesses(args, identifiers, context.SemanticModel);
 
-            nullPointerCheck.MemberAccessing += memberAccessingHandler;
+            //nullPointerCheck.MemberAccessing += memberAccessingHandler;
 
-            try
-            {
-                explodedGraph.Walk();
-            }
-            finally
-            {
-                nullPointerCheck.MemberAccessing -= memberAccessingHandler;
-            }
+            //try
+            //{
+            //    explodedGraph.Walk();
+            //}
+            //finally
+            //{
+            //    nullPointerCheck.MemberAccessing -= memberAccessingHandler;
+            //}
 
-            foreach (var identifier in identifiers)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(rule, identifier.GetLocation(), identifier.Identifier.ValueText));
-            }
+            //foreach (var identifier in identifiers)
+            //{
+            //    context.ReportDiagnostic(Diagnostic.Create(rule, identifier.GetLocation(), identifier.Identifier.ValueText));
+            //}
         }
 
-        private static void CollectMemberAccesses(MemberAccessingEventArgs args, HashSet<IdentifierNameSyntax> identifiers,
-            SemanticModel semanticModel)
-        {
-            if (args.Symbol is IParameterSymbol &&
-                !NullPointerDereference.NullPointerCheck.IsExtensionMethod(args.Identifier.Parent, semanticModel) &&
-                !args.Symbol.HasConstraint(ObjectConstraint.NotNull, args.ProgramState))
-            {
-                identifiers.Add(args.Identifier);
-            }
-        }
+        //private static void CollectMemberAccesses(MemberAccessingEventArgs args, HashSet<IdentifierNameSyntax> identifiers,
+        //    SemanticModel semanticModel)
+        //{
+        //    if (args.Symbol is IParameterSymbol &&
+        //        !NullPointerDereference.NullPointerCheck.IsExtensionMethod(args.Identifier.Parent, semanticModel) &&
+        //        !args.Symbol.HasConstraint(ObjectConstraint.NotNull, args.ProgramState))
+        //    {
+        //        identifiers.Add(args.Identifier);
+        //    }
+        //}
     }
 }

@@ -19,34 +19,24 @@
  */
 
 using System;
+using SonarAnalyzer.Helpers.FlowAnalysis.Common;
 
 namespace SonarAnalyzer.Helpers.FlowAnalysis
 {
-    public class ConstraintObserver : IObserver<ConstraintAdded>, IObserver<ConstraintAdding>
+    public class NullableConstraintObserver : ConstraintObserver
     {
-        public Action<ConstraintAdding> Report { get; }
-
-        public ConstraintObserver(Action<ConstraintAdding> report)
-        {
-            Report = report;
-        }
-
-        public void OnCompleted()
-        {
-            // we don't care
-        }
-
-        public void OnError(Exception error)
-        {
-            // we don't care
-        }
-
-        public virtual void OnNext(ConstraintAdded value)
+        public NullableConstraintObserver(Action<ConstraintAdding> report)
+            : base(report)
         {
         }
 
-        public virtual void OnNext(ConstraintAdding value)
+        public override void OnNext(ConstraintAdding value)
         {
+            if (value.Constraint == NullableValueConstraint.HasValue &&
+                value.SymbolicValue.HasConstraint(NullableValueConstraint.NoValue, value.ProgramState))
+            {
+                Report(value);
+            }
         }
     }
 }

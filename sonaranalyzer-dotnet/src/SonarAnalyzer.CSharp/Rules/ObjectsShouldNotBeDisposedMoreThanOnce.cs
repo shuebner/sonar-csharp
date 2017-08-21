@@ -18,18 +18,13 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using SonarAnalyzer.Common;
 using SonarAnalyzer.Helpers;
 using SonarAnalyzer.Helpers.FlowAnalysis;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
 using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
 using CSharpExplodedGraphWalker = SonarAnalyzer.Helpers.FlowAnalysis.CSharp.CSharpExplodedGraphWalker;
 
@@ -65,150 +60,5 @@ namespace SonarAnalyzer.Rules.CSharp
 
             explodedGraph.Walk();
         }
-
-        ////internal class ObjectDisposedEventArgs : EventArgs
-        ////{
-        ////    public string Name { get; }
-        ////    public Location Location { get; }
-
-        ////    public ObjectDisposedEventArgs(string name, Location location)
-        ////    {
-        ////        Name = name;
-        ////        Location = location;
-        ////    }
-        ////}
-
-        ////internal sealed class ObjectDisposedPointerCheck : ExplodedGraphCheck
-        ////{
-        ////    public event EventHandler<ObjectDisposedEventArgs> ObjectDisposed;
-
-        ////    public ObjectDisposedPointerCheck(CSharpExplodedGraphWalker explodedGraph)
-        ////        : base(explodedGraph)
-        ////    {
-        ////    }
-
-        ////    public override ProgramState PreProcessUsingStatement(ProgramPoint programPoint, ProgramState programState)
-        ////    {
-        ////        var newProgramState = programState;
-
-        ////        var usingFinalizer = (UsingEndBlock)programPoint.Block;
-
-        ////        var disposables = usingFinalizer.Identifiers
-        ////            .Select(i =>
-        ////            new
-        ////            {
-        ////                SyntaxNode = i.Parent,
-        ////                Symbol = semanticModel.GetDeclaredSymbol(i.Parent)
-        ////                    ?? semanticModel.GetSymbolInfo(i.Parent).Symbol
-        ////            });
-
-        ////        foreach (var disposable in disposables)
-        ////        {
-        ////            newProgramState = ProcessDisposableSymbol(newProgramState, disposable.SyntaxNode, disposable.Symbol);
-        ////        }
-
-        ////        newProgramState = ProcessStreamDisposingTypes(newProgramState,
-        ////            (SyntaxNode)usingFinalizer.UsingStatement.Expression ?? usingFinalizer.UsingStatement.Declaration);
-
-        ////        return newProgramState;
-        ////    }
-
-        ////    public override ProgramState PreProcessInstruction(ProgramPoint programPoint, ProgramState programState)
-        ////    {
-        ////        var instruction = programPoint.Block.Instructions[programPoint.Offset] as InvocationExpressionSyntax;
-
-        ////        return instruction == null
-        ////            ? programState
-        ////            : VisitInvocationExpression(instruction, programState);
-        ////    }
-
-        ////    private ProgramState VisitInvocationExpression(InvocationExpressionSyntax instruction, ProgramState programState)
-        ////    {
-        ////        var newProgramState = programState;
-
-        ////        var disposeMethodSymbol = semanticModel.GetSymbolInfo(instruction).Symbol as IMethodSymbol;
-        ////        if (disposeMethodSymbol.IsIDisposableDispose())
-        ////        {
-        ////            var disposedObject =
-        ////                // Direct call to Dispose()
-        ////                instruction.Expression as IdentifierNameSyntax
-        ////                // Call to Dispose on local variable, field or this
-        ////                ?? (instruction.Expression as MemberAccessExpressionSyntax)?.Expression;
-        ////            if (disposedObject != null)
-        ////            {
-        ////                var disposableSymbol = semanticModel.GetSymbolInfo(disposedObject).Symbol;
-        ////                if (disposableSymbol is IMethodSymbol ||
-        ////                    disposableSymbol is IParameterSymbol)
-        ////                {
-        ////                    disposableSymbol = disposableSymbol.ContainingType;
-        ////                }
-        ////                newProgramState = ProcessDisposableSymbol(newProgramState, disposedObject, disposableSymbol);
-        ////            }
-        ////        }
-
-        ////        return newProgramState;
-        ////    }
-
-        ////    private ProgramState ProcessStreamDisposingTypes(ProgramState programState, SyntaxNode usingExpression)
-        ////    {
-        ////        var newProgramState = programState;
-
-        ////        var arguments = usingExpression.DescendantNodes()
-        ////            .OfType<ObjectCreationExpressionSyntax>()
-        ////            .Where(this.IsStreamDisposingType)
-        ////            .Select(FirstArgumentOrDefault)
-        ////            .WhereNotNull();
-
-        ////        foreach (var argument in arguments)
-        ////        {
-        ////            var streamSymbol = semanticModel.GetSymbolInfo(argument.Expression).Symbol;
-        ////            newProgramState = ProcessDisposableSymbol(newProgramState, argument.Expression, streamSymbol);
-        ////        }
-
-        ////        return newProgramState;
-        ////    }
-
-        ////    private ProgramState ProcessDisposableSymbol(ProgramState programState, SyntaxNode disposeInstruction,
-        ////        ISymbol disposableSymbol)
-        ////    {
-        ////        if (disposableSymbol == null) // DisposableSymbol is null when we invoke an array element
-        ////        {
-        ////            return programState;
-        ////        }
-
-        ////        if (disposableSymbol.HasConstraint(DisposableConstraint.Disposed, programState))
-        ////        {
-        ////            ObjectDisposed?.Invoke(this, new ObjectDisposedEventArgs(disposableSymbol.Name,
-        ////                disposeInstruction.GetLocation()));
-        ////            return programState;
-        ////        }
-
-        ////        // We should not replace Null constraint because having Disposed constraint
-        ////        // implies having NotNull constraint, which is incorrect.
-        ////        if (disposableSymbol.HasConstraint(ObjectConstraint.Null, programState))
-        ////        {
-        ////            return programState;
-        ////        }
-
-        ////        var newProgramState = programState;
-        ////        if (disposableSymbol is INamedTypeSymbol &&
-        ////            newProgramState.GetSymbolValue(disposableSymbol) == null)
-        ////        {
-        ////            // Dispose is called on current instance but we don't usually store a symbol for this
-        ////            // so we store it and then associate the Disposed constraint.
-        ////            newProgramState = newProgramState.StoreSymbolicValue(disposableSymbol, SymbolicValue.This);
-        ////        }
-        ////        return disposableSymbol.SetConstraint(DisposableConstraint.Disposed, newProgramState);
-        ////    }
-
-        ////    private static ArgumentSyntax FirstArgumentOrDefault(ObjectCreationExpressionSyntax objectCreation) =>
-        ////        objectCreation.ArgumentList?.Arguments.FirstOrDefault();
-
-        ////    private bool IsStreamDisposingType(ObjectCreationExpressionSyntax objectCreation) =>
-        ////        semanticModel.GetSymbolInfo(objectCreation.Type)
-        ////            .Symbol
-        ////            .GetSymbolType()
-        ////            .DerivesOrImplementsAny(typesDisposingUnderlyingStream);
-        ////}
     }
 }

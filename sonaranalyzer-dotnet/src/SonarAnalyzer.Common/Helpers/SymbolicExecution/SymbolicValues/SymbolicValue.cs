@@ -28,66 +28,25 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 {
     public class SymbolicValue
     {
-        public static readonly SymbolicValue True = new BoolLiteralSymbolicValue(true);
-        public static readonly SymbolicValue False = new BoolLiteralSymbolicValue(false);
-        public static readonly SymbolicValue Null = new NullSymbolicValue();
-        public static readonly SymbolicValue This = new ThisSymbolicValue();
-        public static readonly SymbolicValue Base = new BaseSymbolicValue();
+        public static readonly SymbolicValue True = new SymbolicValue("TRUE");
+        public static readonly SymbolicValue False = new SymbolicValue("FALSE");
+        public static readonly SymbolicValue Null = new SymbolicValue("NULL");
+        public static readonly SymbolicValue This = new SymbolicValue("THIS");
+        public static readonly SymbolicValue Base = new SymbolicValue("BASE");
 
-        private class BoolLiteralSymbolicValue : SymbolicValue
-        {
-            internal BoolLiteralSymbolicValue(bool value)
-                : base(value)
-            {
-            }
-        }
-
-        private class ThisSymbolicValue : SymbolicValue
-        {
-            internal ThisSymbolicValue()
-                : base(new object())
-            {
-            }
-            public override string ToString()
-            {
-                return "SV_THIS";
-            }
-        }
-
-        private class BaseSymbolicValue : SymbolicValue
-        {
-            internal BaseSymbolicValue()
-                : base(new object())
-            {
-            }
-            public override string ToString()
-            {
-                return "SV_BASE";
-            }
-        }
-
-        private class NullSymbolicValue : SymbolicValue
-        {
-            internal NullSymbolicValue()
-                : base(new object())
-            {
-            }
-            public override string ToString()
-            {
-                return "SV_NULL";
-            }
-        }
-
-        protected readonly object identifier;
+        protected readonly string identifier;
 
         private static int SymbolicValueCounter = 0;
 
-        internal SymbolicValue()
-            : this(SymbolicValueCounter++)
+        public SymbolicValue InnerSymbolicValue { get; }
+
+        internal SymbolicValue(SymbolicValue innerSymbolicValue = null)
+            : this((SymbolicValueCounter++).ToString())
         {
+            InnerSymbolicValue = innerSymbolicValue;
         }
 
-        private SymbolicValue(object identifier)
+        private SymbolicValue(string identifier)
         {
             this.identifier = identifier;
         }

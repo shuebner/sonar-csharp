@@ -27,8 +27,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SonarAnalyzer.Helpers.FlowAnalysis.Common;
-using SonarAnalyzer.Helpers.SymbolicExecution;
-using SonarAnalyzer.Rules.CSharp;
 
 namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 {
@@ -42,16 +40,11 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             Common.LiveVariableAnalysis lva)
             : base(cfg, declaration, semanticModel, lva)
         {
-            // Add mandatory checks
-            ////AddExplodedGraphCheck(new NullPointerDereference.NullPointerCheck(this));
-            ////AddExplodedGraphCheck(new EmptyNullableValueAccess.NullValueAccessedCheck(this));
-            ////AddExplodedGraphCheck(new InvalidCastToInterface.NullableCastCheck(this));
-
             decorators = ImmutableList.Create<ConstraintDecorator>(
-                //new ObjectConstraintDecorator(this),
-                //new NullableConstraintDecorator(this),
-                //new BooleanConstraintDecorator(this),
-                //new CollectionConstraintDecorator(this),
+                new ObjectConstraintDecorator(this),
+                new NullableConstraintDecorator(this),
+                new BooleanConstraintDecorator(this),
+                new CollectionConstraintDecorator(this),
                 new DisposableConstraintDecorator(this));
         }
 
@@ -295,18 +288,6 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                     break;
 
                 case SyntaxKind.SimpleMemberAccessExpression:
-                    {
-                        var memberAccess = (MemberAccessExpressionSyntax)instruction;
-                        var check = explodedGraphChecks.OfType<EmptyNullableValueAccess.NullValueAccessedCheck>().FirstOrDefault();
-                        if (check == null ||
-                            !check.TryProcessInstruction(memberAccess, newProgramState, out newProgramState))
-                        {
-                            // Default behavior
-                            newProgramState = VisitMemberAccess(memberAccess, newProgramState);
-                        }
-                    }
-                    break;
-
                 case SyntaxKind.PointerMemberAccessExpression:
                     newProgramState = VisitMemberAccess((MemberAccessExpressionSyntax)instruction, newProgramState);
                     break;
@@ -568,8 +549,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                     sv = newProgramState.GetSymbolValue(symbol);
                     if (sv == null)
                     {
-                        sv = fieldSymbol.CreateFieldSymbolicValue();
-                        newProgramState = newProgramState.StoreSymbolicValue(symbol, sv);
+                        newProgramState = CreateAndStoreFieldSymbolicValue(newProgramState, fieldSymbol, out sv);
                     }
                 }
             }
@@ -704,8 +684,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 var fieldSymbol = symbol as IFieldSymbol;
                 if (fieldSymbol != null) // TODO: Fix me when implementing SLVS-1130
                 {
-                    sv = fieldSymbol.CreateFieldSymbolicValue();
-                    newProgramState = newProgramState.StoreSymbolicValue(symbol, sv);
+                    newProgramState = CreateAndStoreFieldSymbolicValue(newProgramState, fieldSymbol, out sv);
                 }
                 else
                 {
@@ -848,6 +827,35 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 
             return parent is ExpressionStatementSyntax ||
                 parent is YieldStatementSyntax;
+        }
+
+        public static ProgramState CreateAndStoreFieldSymbolicValue(ProgramState programState, IFieldSymbol fieldSymbol,
+            out SymbolicValue symbolicValue)
+        {
+            if (!fieldSymbol.IsConst ||
+                !fieldSymbol.HasConstantValue)
+            {
+                // TODO: handle readonly initialized inline with null
+                symbolicValue = new SymbolicValue();
+            }
+            else
+            {
+                var boolValue = fieldSymbol.ConstantValue as bool?;
+                if (boolValue.HasValue)
+                {
+                    symbolicValue = boolValue.Value
+                        ? SymbolicValue.True
+                        : SymbolicValue.False;
+                }
+                else
+                {
+                    symbolicValue = fieldSymbol.ConstantValue == null
+                        ? SymbolicValue.Null
+                        : new SymbolicValue();
+                }
+            }
+
+            return programState.StoreSymbolicValue(fieldSymbol, symbolicValue);
         }
 
         #endregion

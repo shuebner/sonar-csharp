@@ -18,32 +18,25 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-using System;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using SonarAnalyzer.Common;
 using SonarAnalyzer.Helpers;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
+using SonarAnalyzer.Helpers.FlowAnalysis;
 using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
 
 namespace SonarAnalyzer.Rules.CSharp
 {
-    using System.Collections.Immutable;
-    using CSharpExplodedGraphWalker = Helpers.FlowAnalysis.CSharp.CSharpExplodedGraphWalker;
-
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     [Rule(DiagnosticId)]
-    public class EmptyNullableValueAccess : SonarDiagnosticAnalyzer
+    public class ValuePropertyShouldNotBeCalledOnEmptyNullable : SonarDiagnosticAnalyzer
     {
         internal const string DiagnosticId = "S3655";
-        private const string MessageFormat = "'{0}' is null on at least one execution path.";
+        private const string MessageFormat = "'{0}' is empty on at least one execution path.";
 
         private static readonly DiagnosticDescriptor rule =
             DiagnosticDescriptorBuilder.GetDescriptor(DiagnosticId, MessageFormat, RspecStrings.ResourceManager);
-
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(rule);
 
         private const string ValueLiteral = "Value";
@@ -51,133 +44,16 @@ namespace SonarAnalyzer.Rules.CSharp
 
         protected sealed override void Initialize(SonarAnalysisContext context)
         {
-            context.RegisterExplodedGraphBasedAnalysis((e, c) => CheckEmptyNullableAccess(e, c));
+            context.RegisterExplodedGraphBasedAnalysis(CheckEmptyNullableValueAccess);
         }
 
-        private static void CheckEmptyNullableAccess(CSharpExplodedGraphWalker explodedGraph, SyntaxNodeAnalysisContext context)
+        private static void CheckEmptyNullableValueAccess(CSharpExplodedGraphWalker explodedGraph,
+            SyntaxNodeAnalysisContext context)
         {
-            var nullPointerCheck = new NullValueAccessedCheck(explodedGraph);
-            explodedGraph.AddExplodedGraphCheck(nullPointerCheck);
+            explodedGraph.Subscribe(new NullableConstraintObserver(args =>
+                context.ReportDiagnostic(Diagnostic.Create(rule, args.Instruction.GetLocation(), args.Instruction))));
 
-            var nullIdentifiers = new HashSet<IdentifierNameSyntax>();
-
-            EventHandler<MemberAccessedEventArgs> nullValueAccessedHandler =
-                (sender, args) => nullIdentifiers.Add(args.Identifier);
-
-            nullPointerCheck.ValuePropertyAccessed += nullValueAccessedHandler;
-
-            try
-            {
-                explodedGraph.Walk();
-            }
-            finally
-            {
-                nullPointerCheck.ValuePropertyAccessed -= nullValueAccessedHandler;
-            }
-
-            foreach (var nullIdentifier in nullIdentifiers)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(rule, nullIdentifier.Parent.GetLocation(), nullIdentifier.Identifier.ValueText));
-            }
-        }
-
-        internal sealed class NullValueAccessedCheck : ExplodedGraphCheck
-        {
-            public event EventHandler<MemberAccessedEventArgs> ValuePropertyAccessed;
-
-            public NullValueAccessedCheck(CSharpExplodedGraphWalker explodedGraph)
-                : base(explodedGraph)
-            {
-            }
-
-            private void OnValuePropertyAccessed(IdentifierNameSyntax identifier)
-            {
-                ValuePropertyAccessed?.Invoke(this, new MemberAccessedEventArgs(identifier));
-            }
-
-            public override ProgramState PreProcessInstruction(ProgramPoint programPoint, ProgramState programState)
-            {
-                var instruction = programPoint.Block.Instructions[programPoint.Offset];
-
-                return instruction.IsKind(SyntaxKind.SimpleMemberAccessExpression)
-                    ? ProcessMemberAccess(programState, (MemberAccessExpressionSyntax)instruction)
-                    : programState;
-            }
-
-            private ProgramState ProcessMemberAccess(ProgramState programState, MemberAccessExpressionSyntax memberAccess)
-            {
-                var identifier = memberAccess.Expression.RemoveParentheses() as IdentifierNameSyntax;
-                if (identifier == null ||
-                    memberAccess.Name.Identifier.ValueText != ValueLiteral)
-                {
-                    return programState;
-                }
-
-                var symbol = semanticModel.GetSymbolInfo(identifier).Symbol;
-                if (!IsNullableLocalScoped(symbol))
-                {
-                    return programState;
-                }
-
-                if (symbol.HasConstraint(ObjectConstraint.Null, programState))
-                {
-                    OnValuePropertyAccessed(identifier);
-                    return null;
-                }
-
-                return programState;
-            }
-
-            private bool IsNullableLocalScoped(ISymbol symbol)
-            {
-                var type = symbol.GetSymbolType();
-                return type != null &&
-                    type.OriginalDefinition.Is(KnownType.System_Nullable_T) &&
-                    explodedGraph.IsSymbolTracked(symbol);
-            }
-
-            private bool IsHasValueAccess(MemberAccessExpressionSyntax memberAccess)
-            {
-                return memberAccess.Name.Identifier.ValueText == HasValueLiteral &&
-                    (semanticModel.GetTypeInfo(memberAccess.Expression).Type?.OriginalDefinition).Is(KnownType.System_Nullable_T);
-            }
-
-            internal bool TryProcessInstruction(MemberAccessExpressionSyntax instruction, ProgramState programState, out ProgramState newProgramState)
-            {
-                if (IsHasValueAccess(instruction))
-                {
-                    SymbolicValue nullable;
-                    newProgramState = programState.PopValue(out nullable);
-                    newProgramState = newProgramState.PushValue(new HasValueAccessSymbolicValue(nullable));
-                    return true;
-                }
-
-                newProgramState = programState;
-                return false;
-            }
-        }
-
-        internal sealed class HasValueAccessSymbolicValue : MemberAccessSymbolicValue
-        {
-            public HasValueAccessSymbolicValue(SymbolicValue nullable)
-                : base(nullable, HasValueLiteral)
-            {
-            }
-
-            public override IEnumerable<ProgramState> TrySetConstraint(SymbolicValueConstraint constraint, ProgramState currentProgramState)
-            {
-                var boolConstraint = constraint as BoolConstraint;
-                if (boolConstraint == null)
-                {
-                    return new[] { currentProgramState };
-                }
-
-                var nullabilityConstraint = boolConstraint == BoolConstraint.True
-                    ? ObjectConstraint.NotNull
-                    : ObjectConstraint.Null;
-
-                return MemberExpression.TrySetConstraint(nullabilityConstraint, currentProgramState);
-            }
+            explodedGraph.Walk();
         }
     }
 }

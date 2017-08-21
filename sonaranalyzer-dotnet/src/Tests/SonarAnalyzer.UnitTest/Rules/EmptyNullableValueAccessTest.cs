@@ -28,9 +28,25 @@ namespace SonarAnalyzer.UnitTest.Rules
     {
         [TestMethod]
         [TestCategory("Rule")]
+        public void EmptyNullableValueAccess1()
+        {
+            Verifier.VerifyCSharpAnalyzer(@"
+public class Foo
+{
+    public void T()
+    {
+        int? x = null;
+    }
+}",
+                new ValuePropertyShouldNotBeCalledOnEmptyNullable());
+        }
+
+        [TestMethod]
+        [TestCategory("Rule")]
         public void EmptyNullableValueAccess()
         {
-            Verifier.VerifyAnalyzer(@"TestCases\EmptyNullableValueAccess.cs", new EmptyNullableValueAccess());
+            Verifier.VerifyAnalyzer(@"TestCases\EmptyNullableValueAccess.cs",
+                new ValuePropertyShouldNotBeCalledOnEmptyNullable());
         }
     }
 }
