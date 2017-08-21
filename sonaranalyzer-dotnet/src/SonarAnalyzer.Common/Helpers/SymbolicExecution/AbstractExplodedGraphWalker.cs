@@ -74,6 +74,9 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 
         public void Walk()
         {
+            // Enqueue the breaking ConstraintObservers after all other subscribed observers
+            GetBreakers().ToList().ForEach(Subscribe);
+
             var steps = 0;
 
             EnqueueStartNode();
@@ -135,6 +138,10 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
                         VisitBranchBlock(branchBlock, node);
                     }
                 }
+                catch (RuntimeExceptionThrownException)
+                {
+                    continue;
+                }
                 catch (TooManyInternalStatesException)
                 {
                     OnMaxInternalStateCountReached();
@@ -143,6 +150,15 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
             }
 
             OnExplorationEnded();
+        }
+
+        protected virtual IEnumerable<ConstraintObserver> GetBreakers()
+        {
+            return new ConstraintObserver[]
+            {
+                new ObjectConstraintObserver(args => { throw new RuntimeExceptionThrownException(); }),
+                new NullableConstraintObserver(args => { throw new RuntimeExceptionThrownException(); }),
+            };
         }
 
         internal void AddExplodedGraphCheck<T>(T check)
