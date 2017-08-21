@@ -24,11 +24,11 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis
 {
     public class ConstraintObserver : IObserver<ConstraintAdded>, IObserver<ConstraintAdding>
     {
-        public Action<ConstraintAdding> Report { get; }
+        public Action<ConstraintAdding> ReportAction { get; }
 
-        public ConstraintObserver(Action<ConstraintAdding> report)
+        public ConstraintObserver(Action<ConstraintAdding> reportAction)
         {
-            Report = report;
+            ReportAction = reportAction;
         }
 
         public void OnCompleted()

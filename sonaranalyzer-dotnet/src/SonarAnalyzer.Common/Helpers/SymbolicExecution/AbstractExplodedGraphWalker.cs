@@ -59,7 +59,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 
         private readonly ICollection<ConstraintObserver> observers = new List<ConstraintObserver>();
 
-        protected AbstractExplodedGraphWalker(IControlFlowGraph cfg, ISymbol declaration, SemanticModel semanticModel, LiveVariableAnalysis lva)
+        protected AbstractExplodedGraphWalker(IControlFlowGraph cfg, ISymbol declaration, SemanticModel semanticModel,
+            LiveVariableAnalysis lva)
         {
             this.cfg = cfg;
             this.declaration = declaration;

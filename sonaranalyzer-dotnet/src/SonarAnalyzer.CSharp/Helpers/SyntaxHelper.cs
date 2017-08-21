@@ -226,5 +226,10 @@ namespace SonarAnalyzer.Helpers
             return catchClause.Filter == null &&
                 (exceptionTypeName == "Exception" || exceptionTypeName == "System.Exception");
         }
+
+        public static bool IsNullable(this ExpressionSyntax expression, SemanticModel semanticModel)
+        {
+            return semanticModel.GetSymbolInfo(expression).Symbol.IsNullable();
+        }
     }
 }

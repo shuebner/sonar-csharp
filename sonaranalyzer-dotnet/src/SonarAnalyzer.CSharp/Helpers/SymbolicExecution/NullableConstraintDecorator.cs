@@ -46,11 +46,12 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.SimpleMemberAccessExpression:
                     {
                         var memberAccess = (MemberAccessExpressionSyntax)node.Instruction;
+                        var symbol = SemanticModel.GetSymbolInfo(memberAccess.Expression).Symbol;
 
-                        if (IsValuePropertyAccess(memberAccess))
+                        if (IsValuePropertyAccess(memberAccess) &&
+                            ExplodedGraphWalker.IsSymbolTracked(symbol))
                         {
-                            var typeSymbol = SemanticModel.GetTypeInfo(memberAccess).Type;
-                            var sv = newProgramState.ExpressionStack.Peek();
+                            var sv = newProgramState.GetSymbolValue(symbol);
                             newProgramState = SetConstraint(sv, NullableValueConstraint.HasValue, memberAccess,
                                 newProgramState);
                         }
@@ -125,8 +126,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         private bool IsValuePropertyAccess(MemberAccessExpressionSyntax memberAccess)
         {
             return memberAccess.Name.Identifier.ValueText == ValueLiteral &&
-                (SemanticModel.GetTypeInfo(memberAccess.Expression).Type?.OriginalDefinition)
-                    .Is(KnownType.System_Nullable_T);
+                memberAccess.Expression.IsNullable(SemanticModel);
         }
 
         private static bool IsNullableCtorCall(IMethodSymbol nullableConstructorCall)

@@ -33,7 +33,6 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
     internal class CSharpExplodedGraphWalker : AbstractExplodedGraphWalker
     {
         private readonly IEnumerable<ConstraintDecorator> decorators;
-
         protected override IEnumerable<ConstraintDecorator> ConstraintDecorators => decorators;
 
         public CSharpExplodedGraphWalker(IControlFlowGraph cfg, ISymbol declaration, SemanticModel semanticModel,

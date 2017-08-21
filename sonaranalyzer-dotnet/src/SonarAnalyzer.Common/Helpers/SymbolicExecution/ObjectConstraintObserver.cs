@@ -35,7 +35,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis
             if (value.Constraint == ObjectConstraint.Null &&
                 value.SymbolicValue.HasConstraint(ObjectConstraint.NotNull, value.ProgramState))
             {
-                Report(value);
+                ReportAction(value);
             }
         }
     }

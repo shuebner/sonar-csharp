@@ -34,9 +34,10 @@ namespace SonarAnalyzer.UnitTest.Rules
 using System;
 public class Foo
 {
-    public void T(int? x)
+    void Foo1()
     {
-        x = 12;
+        int? i = null;
+        var x = i.Value; // Noncompliant
     }
 }",
                 new ValuePropertyShouldNotBeCalledOnEmptyNullable());

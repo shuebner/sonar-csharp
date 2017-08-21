@@ -35,7 +35,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis
             if (value.Constraint == DisposableConstraint.Disposed &&
                 value.SymbolicValue.HasConstraint(DisposableConstraint.Disposed, value.ProgramState))
             {
-                Report(value);
+                ReportAction(value);
             }
         }
     }

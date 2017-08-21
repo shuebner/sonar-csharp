@@ -39,9 +39,6 @@ namespace SonarAnalyzer.Rules.CSharp
             DiagnosticDescriptorBuilder.GetDescriptor(DiagnosticId, MessageFormat, RspecStrings.ResourceManager);
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(rule);
 
-        private const string ValueLiteral = "Value";
-        private const string HasValueLiteral = "HasValue";
-
         protected sealed override void Initialize(SonarAnalysisContext context)
         {
             context.RegisterExplodedGraphBasedAnalysis(CheckEmptyNullableValueAccess);

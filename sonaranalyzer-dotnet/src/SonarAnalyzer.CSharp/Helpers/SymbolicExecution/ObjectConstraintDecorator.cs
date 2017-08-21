@@ -32,10 +32,6 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         {
         }
 
-        public override ProgramState PostProcessDeclarationParameters(IParameterSymbol symbol,
-            SymbolicValue symbolicValue, ProgramState programState)
-            => SetNonNullConstraintIfValueType(symbol, symbolicValue, programState);
-
         public override ProgramState PostProcessInstruction(ExplodedGraphNode node, ProgramState programState)
         {
             var newProgramState = programState;
@@ -45,6 +41,19 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.NullLiteralExpression:
                     break; // Constant literal expressions are already handled by exploded graph walker
 
+                case SyntaxKind.Parameter:
+                    {
+                        var symbol = SemanticModel.GetDeclaredSymbol(node.Instruction);
+
+                        if (ExplodedGraphWalker.IsSymbolTracked(symbol))
+                        {
+                            var sv = newProgramState.ExpressionStack.Peek();
+                            newProgramState = SetNonNullConstraintIfValueType(symbol, sv, node.Instruction,
+                                newProgramState);
+                        }
+                        break;
+                    }
+
                 case SyntaxKind.IdentifierName:
                     {
                         var symbol = SemanticModel.GetSymbolInfo(node.Instruction).Symbol;
@@ -52,7 +61,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                         if (ExplodedGraphWalker.IsSymbolTracked(symbol))
                         {
                             var sv = newProgramState.ExpressionStack.Peek();
-                            newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
+                            newProgramState = SetNonNullConstraintIfValueType(symbol, sv, node.Instruction,
+                                newProgramState);
                         }
                         break;
                     }
@@ -70,7 +80,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                         if (ExplodedGraphWalker.IsSymbolTracked(symbol))
                         {
                             var sv = newProgramState.ExpressionStack.Peek();
-                            newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
+                            newProgramState = SetNonNullConstraintIfValueType(symbol, sv, node.Instruction,
+                                newProgramState);
                         }
                         break;
                     }
@@ -84,7 +95,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                             ExplodedGraphWalker.IsSymbolTracked(symbol))
                         {
                             var sv = node.ProgramState.ExpressionStack.Peek();
-                            newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
+                            newProgramState = SetNonNullConstraintIfValueType(symbol, sv, node.Instruction,
+                                newProgramState);
                         }
                         break;
                     }
@@ -102,7 +114,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                         if (ExplodedGraphWalker.IsSymbolTracked(symbol))
                         {
                             var sv = newProgramState.ExpressionStack.Peek();
-                            newProgramState = SetNonNullConstraintIfValueType(symbol, sv, newProgramState);
+                            newProgramState = SetNonNullConstraintIfValueType(symbol, sv, assignment, newProgramState);
                         }
                         break;
                     }
@@ -116,8 +128,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                             typeSymbol.OriginalDefinition.Is(KnownType.System_Nullable_T);
 
                         newProgramState = isReferenceOrNullable
-                            ? sv.SetConstraint(ObjectConstraint.Null, programState)
-                            : SetNonNullConstraintIfValueType(typeSymbol, sv, programState);
+                            ? SetConstraint(sv, ObjectConstraint.Null, node.Instruction, newProgramState)
+                            : SetNonNullConstraintIfValueType(typeSymbol, sv, node.Instruction, newProgramState);
                         break;
                     }
 
@@ -128,7 +140,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                         if (argSV.HasConstraint(ObjectConstraint.Null, newProgramState))
                         {
                             var sv = newProgramState.ExpressionStack.Peek();
-                            newProgramState = sv.SetConstraint(ObjectConstraint.Null, newProgramState);
+                            newProgramState = SetConstraint(sv, ObjectConstraint.Null, node.Instruction, newProgramState);
                         }
                         break;
                     }
@@ -138,7 +150,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                     {
                         var typeSymbol = SemanticModel.GetTypeInfo(node.Instruction).Type;
                         var sv = newProgramState.ExpressionStack.Peek();
-                        newProgramState = SetNonNullConstraintIfValueType(typeSymbol, sv, newProgramState);
+                        newProgramState = SetNonNullConstraintIfValueType(typeSymbol, sv, node.Instruction, newProgramState);
                         break;
                     }
 
@@ -147,7 +159,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 case SyntaxKind.StackAllocArrayCreationExpression:
                     {
                         var sv = newProgramState.ExpressionStack.Peek();
-                        newProgramState = sv.SetConstraint(ObjectConstraint.NotNull, newProgramState);
+                        newProgramState = SetConstraint(sv, ObjectConstraint.NotNull, node.Instruction, newProgramState);
                         break;
                     }
             }
@@ -165,14 +177,15 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             {
                 var foreachVariableSymbol = SemanticModel.GetDeclaredSymbol(binaryBranchBlock.BranchingNode);
                 var sv = newProgramState.ExpressionStack.Peek();
-                newProgramState = SetNonNullConstraintIfValueType(foreachVariableSymbol, sv, newProgramState);
+                newProgramState = SetNonNullConstraintIfValueType(foreachVariableSymbol, sv,
+                    binaryBranchBlock.BranchingNode, newProgramState);
             }
 
             return newProgramState;
         }
 
-        private static ProgramState SetNonNullConstraintIfValueType(ITypeSymbol typeSymbol,
-            SymbolicValue symbolicValue, ProgramState programState)
+        private ProgramState SetNonNullConstraintIfValueType(ITypeSymbol typeSymbol,
+            SymbolicValue symbolicValue, SyntaxNode node, ProgramState programState)
         {
             if (symbolicValue.HasConstraint(ObjectConstraint.NotNull, programState))
             {
@@ -185,14 +198,14 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 typeSymbol.TypeKind != TypeKind.Pointer;
 
             return isDefinitelyNotNull
-                ? symbolicValue.SetConstraint(ObjectConstraint.NotNull, programState)
+                ? SetConstraint(symbolicValue, ObjectConstraint.NotNull, node, programState)
                 : programState;
         }
 
-        private static ProgramState SetNonNullConstraintIfValueType(ISymbol symbol, SymbolicValue symbolicValue,
-            ProgramState programState)
+        private ProgramState SetNonNullConstraintIfValueType(ISymbol symbol, SymbolicValue symbolicValue,
+            SyntaxNode node, ProgramState programState)
         {
-            return SetNonNullConstraintIfValueType(symbol.GetSymbolType(), symbolicValue, programState);
+            return SetNonNullConstraintIfValueType(symbol.GetSymbolType(), symbolicValue, node, programState);
         }
     }
 }
