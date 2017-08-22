@@ -28,12 +28,11 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using SonarAnalyzer.Common;
 using SonarAnalyzer.Helpers;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
-using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
+using SonarAnalyzer.DataFlowAnalysis;
+using SonarAnalyzer.DataFlowAnalysis.CSharp;
 
 namespace SonarAnalyzer.Rules.CSharp
 {
-    using LiveVariableAnalysis = Helpers.FlowAnalysis.CSharp.LiveVariableAnalysis;
 
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     [Rule(DiagnosticId)]
@@ -108,7 +107,7 @@ namespace SonarAnalyzer.Rules.CSharp
                 return;
             }
 
-            var lva = LiveVariableAnalysis.Analyze(cfg, declaration, context.SemanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, declaration, context.SemanticModel);
 
             foreach (var block in cfg.Blocks)
             {
@@ -206,9 +205,9 @@ namespace SonarAnalyzer.Rules.CSharp
                 }
 
                 if (!identifier.GetSelfOrTopParenthesizedExpression().IsInNameofCall(context.SemanticModel) &&
-                    LiveVariableAnalysis.IsLocalScoped(symbol, declaration))
+                    CSharpLiveVariableAnalysis.IsLocalScoped(symbol, declaration))
                 {
-                    if (LiveVariableAnalysis.IsOutArgument(identifier))
+                    if (CSharpLiveVariableAnalysis.IsOutArgument(identifier))
                     {
                         liveOut.Remove(symbol);
                     }
@@ -330,7 +329,7 @@ namespace SonarAnalyzer.Rules.CSharp
                         return;
                     }
 
-                    if (LiveVariableAnalysis.IsLocalScoped(symbol, declaration) &&
+                    if (CSharpLiveVariableAnalysis.IsLocalScoped(symbol, declaration) &&
                         !liveOut.Contains(symbol))
                     {
                         context.ReportDiagnostic(Diagnostic.Create(rule, prefixExpression.GetLocation(), symbol.Name));
@@ -350,7 +349,7 @@ namespace SonarAnalyzer.Rules.CSharp
                         return;
                     }
 
-                    if (LiveVariableAnalysis.IsLocalScoped(symbol, declaration) &&
+                    if (CSharpLiveVariableAnalysis.IsLocalScoped(symbol, declaration) &&
                         !liveOut.Contains(symbol))
                     {
                         context.ReportDiagnostic(Diagnostic.Create(rule, postfixExpression.GetLocation(), symbol.Name));
@@ -361,7 +360,7 @@ namespace SonarAnalyzer.Rules.CSharp
             private static void ReportOnAssignment(AssignmentExpressionSyntax assignment, ExpressionSyntax left, ISymbol symbol,
                 ISymbol declaration, HashSet<SyntaxNode> assignmentLhs, HashSet<ISymbol> outState, SyntaxNodeAnalysisContext context)
             {
-                if (LiveVariableAnalysis.IsLocalScoped(symbol, declaration) &&
+                if (CSharpLiveVariableAnalysis.IsLocalScoped(symbol, declaration) &&
                     !outState.Contains(symbol))
                 {
                     var location = GetFirstLineLocationFromToken(assignment.OperatorToken, assignment.Right);

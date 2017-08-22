@@ -21,7 +21,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     public abstract class BinaryRelationship : IEquatable<BinaryRelationship>
     {

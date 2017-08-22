@@ -21,7 +21,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     public abstract class NotEqualsSymbolicValue : EqualityLikeSymbolicValue
     {

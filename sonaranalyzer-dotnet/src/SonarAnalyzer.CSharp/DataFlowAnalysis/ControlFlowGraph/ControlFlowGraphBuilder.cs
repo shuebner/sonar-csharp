@@ -24,11 +24,12 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
+using SonarAnalyzer.DataFlowAnalysis;
+using SonarAnalyzer.Helpers;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
+namespace SonarAnalyzer.DataFlowAnalysis.CSharp
 {
-    internal sealed class ControlFlowGraphBuilder : Common.ControlFlowGraphBuilder
+    internal sealed class CSharpControlFlowGraphBuilder : ControlFlowGraphBuilder
     {
         private readonly Stack<Block> BreakTarget = new Stack<Block>();
         private readonly Stack<Block> ContinueTargets = new Stack<Block>();
@@ -39,7 +40,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         private static readonly object GotoDefaultEntry = new object();
         private static readonly object GotoNullEntry = new object();
 
-        internal ControlFlowGraphBuilder(CSharpSyntaxNode node, SemanticModel semanticModel)
+        internal CSharpControlFlowGraphBuilder(CSharpSyntaxNode node, SemanticModel semanticModel)
             : base(node, semanticModel)
         {
         }

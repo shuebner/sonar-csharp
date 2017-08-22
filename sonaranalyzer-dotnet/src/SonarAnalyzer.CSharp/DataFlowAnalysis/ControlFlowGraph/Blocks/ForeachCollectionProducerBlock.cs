@@ -20,9 +20,9 @@
 
 using System;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
+using SonarAnalyzer.DataFlowAnalysis;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
+namespace SonarAnalyzer.DataFlowAnalysis.CSharp
 {
     public sealed class ForeachCollectionProducerBlock : SimpleBlock
     {

@@ -20,7 +20,7 @@
 
 using System.Collections.Generic;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     public class LogicalNotSymbolicValue : UnarySymbolicValue
     {

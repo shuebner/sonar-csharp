@@ -21,7 +21,7 @@
 using System;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     internal class MemberAccessedEventArgs : EventArgs
     {

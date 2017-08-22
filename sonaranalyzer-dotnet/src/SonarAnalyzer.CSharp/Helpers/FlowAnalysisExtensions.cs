@@ -23,9 +23,10 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
+using SonarAnalyzer.DataFlowAnalysis;
+using SonarAnalyzer.Helpers;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
+namespace SonarAnalyzer.DataFlowAnalysis.CSharp
 {
     internal static class FlowAnalysisExtensions
     {
@@ -127,7 +128,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 return;
             }
 
-            var lva = LiveVariableAnalysis.Analyze(cfg, symbol, context.SemanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, symbol, context.SemanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, symbol, context.SemanticModel, lva);
             analyze(explodedGraph, context);

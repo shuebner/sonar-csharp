@@ -20,7 +20,7 @@
 
 using System.Collections.Generic;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     /// <summary>
     /// Represents a Control Flow Graph of a method or property.

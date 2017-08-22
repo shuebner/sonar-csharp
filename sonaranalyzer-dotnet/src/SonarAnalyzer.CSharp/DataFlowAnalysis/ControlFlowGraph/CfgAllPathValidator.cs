@@ -21,9 +21,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
+using SonarAnalyzer.DataFlowAnalysis;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     internal class CfgAllPathValidator
     {

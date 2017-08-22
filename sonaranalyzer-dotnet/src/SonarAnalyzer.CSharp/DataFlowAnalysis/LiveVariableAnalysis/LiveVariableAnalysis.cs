@@ -23,16 +23,17 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
+using SonarAnalyzer.DataFlowAnalysis;
+using SonarAnalyzer.Helpers;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
+namespace SonarAnalyzer.DataFlowAnalysis.CSharp
 {
-    public sealed class LiveVariableAnalysis : Common.LiveVariableAnalysis
+    public sealed class CSharpLiveVariableAnalysis : LiveVariableAnalysis
     {
         private readonly ISymbol declaration;
         private readonly SemanticModel semanticModel;
 
-        private LiveVariableAnalysis(IControlFlowGraph controlFlowGraph, ISymbol declaration,
+        private CSharpLiveVariableAnalysis(IControlFlowGraph controlFlowGraph, ISymbol declaration,
             SemanticModel semanticModel)
             : base(controlFlowGraph)
         {
@@ -40,10 +41,10 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             this.semanticModel = semanticModel;
         }
 
-        public static Common.LiveVariableAnalysis Analyze(IControlFlowGraph controlFlowGraph, ISymbol declaration,
+        public static LiveVariableAnalysis Analyze(IControlFlowGraph controlFlowGraph, ISymbol declaration,
             SemanticModel semanticModel)
         {
-            var lva = new LiveVariableAnalysis(controlFlowGraph, declaration, semanticModel);
+            var lva = new CSharpLiveVariableAnalysis(controlFlowGraph, declaration, semanticModel);
             lva.PerformAnalysis();
             return lva;
         }

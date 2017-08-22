@@ -18,9 +18,9 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
+using SonarAnalyzer.DataFlowAnalysis;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
+namespace SonarAnalyzer.DataFlowAnalysis.CSharp
 {
     internal class CollectionConstraintDecorator : ConstraintDecorator
     {

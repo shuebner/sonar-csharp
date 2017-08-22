@@ -20,8 +20,9 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using SonarAnalyzer.Helpers;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     public class NullableSymbolicValue : SymbolicValue
     {

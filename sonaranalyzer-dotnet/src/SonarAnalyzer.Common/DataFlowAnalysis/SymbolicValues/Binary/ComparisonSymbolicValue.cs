@@ -21,7 +21,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     public class ComparisonSymbolicValue : BinarySymbolicValue
     {

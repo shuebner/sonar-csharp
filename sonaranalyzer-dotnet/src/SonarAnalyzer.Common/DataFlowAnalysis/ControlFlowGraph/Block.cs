@@ -24,7 +24,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     /// <summary>
     /// Basic building blocks of a Control Flow Graph (<see cref="IControlFlowGraph"/>).

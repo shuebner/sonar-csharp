@@ -19,20 +19,19 @@
  */
 
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using SonarAnalyzer.Common;
+using SonarAnalyzer.DataFlowAnalysis;
+using SonarAnalyzer.DataFlowAnalysis.CSharp;
 using SonarAnalyzer.Helpers;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
-using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
 
 namespace SonarAnalyzer.Rules.CSharp
 {
-    using System.Collections.Immutable;
-    using CSharpExplodedGraphWalker = Helpers.FlowAnalysis.CSharp.CSharpExplodedGraphWalker;
 
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     [Rule(DiagnosticId)]

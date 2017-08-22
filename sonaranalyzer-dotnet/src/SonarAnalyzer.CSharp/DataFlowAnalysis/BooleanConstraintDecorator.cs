@@ -19,9 +19,9 @@
  */
 
 using Microsoft.CodeAnalysis.CSharp;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
+using SonarAnalyzer.DataFlowAnalysis;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
+namespace SonarAnalyzer.DataFlowAnalysis.CSharp
 {
     internal class BooleanConstraintDecorator : ConstraintDecorator
     {

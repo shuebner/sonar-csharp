@@ -22,7 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     public sealed class ComparisonRelationship : BinaryRelationship, IEquatable<ComparisonRelationship>
     {

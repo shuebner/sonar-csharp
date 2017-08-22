@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
+using SonarAnalyzer.DataFlowAnalysis;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     public class ConstraintAdding
     {

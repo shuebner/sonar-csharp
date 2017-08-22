@@ -26,9 +26,10 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
+using SonarAnalyzer.DataFlowAnalysis;
+using SonarAnalyzer.Helpers;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
+namespace SonarAnalyzer.DataFlowAnalysis.CSharp
 {
     internal class CSharpExplodedGraphWalker : AbstractExplodedGraphWalker
     {
@@ -36,7 +37,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         protected override IEnumerable<ConstraintDecorator> ConstraintDecorators => decorators;
 
         public CSharpExplodedGraphWalker(IControlFlowGraph cfg, ISymbol declaration, SemanticModel semanticModel,
-            Common.LiveVariableAnalysis lva)
+            LiveVariableAnalysis lva)
             : base(cfg, declaration, semanticModel, lva)
         {
             decorators = ImmutableList.Create<ConstraintDecorator>(
@@ -768,7 +769,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         {
             SymbolicValue sv;
             var newProgramState = programState.PopValue(out sv);
-            if (!ControlFlowGraphBuilder.IsAssignmentWithSimpleLeftSide(assignment))
+            if (!CSharpControlFlowGraphBuilder.IsAssignmentWithSimpleLeftSide(assignment))
             {
                 newProgramState = newProgramState.PopValue();
             }

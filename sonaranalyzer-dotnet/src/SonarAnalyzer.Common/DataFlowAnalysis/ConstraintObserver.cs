@@ -20,7 +20,7 @@
 
 using System;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     public class ConstraintObserver : IObserver<ConstraintAdded>, IObserver<ConstraintAdding>
     {

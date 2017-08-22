@@ -20,7 +20,7 @@
 
 using System;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     public class TooManyInternalStatesException : Exception
     {

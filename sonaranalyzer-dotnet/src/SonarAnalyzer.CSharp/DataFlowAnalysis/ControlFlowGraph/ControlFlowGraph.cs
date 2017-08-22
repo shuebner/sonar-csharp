@@ -22,15 +22,15 @@ using System;
 using System.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
+using SonarAnalyzer.DataFlowAnalysis;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
+namespace SonarAnalyzer.DataFlowAnalysis.CSharp
 {
     public static class ControlFlowGraph
     {
         public static IControlFlowGraph Create(CSharpSyntaxNode node, SemanticModel semanticModel)
         {
-            return new ControlFlowGraphBuilder(node, semanticModel).Build();
+            return new CSharpControlFlowGraphBuilder(node, semanticModel).Build();
         }
 
         public static bool TryGet(CSharpSyntaxNode node, SemanticModel semanticModel, out IControlFlowGraph cfg)

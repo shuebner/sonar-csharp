@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     public class BranchBlock : Block
     {

@@ -23,8 +23,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using SonarAnalyzer.Common;
 using SonarAnalyzer.Helpers;
-using SonarAnalyzer.Helpers.FlowAnalysis;
-using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
+using SonarAnalyzer.DataFlowAnalysis;
+using SonarAnalyzer.DataFlowAnalysis.CSharp;
 
 namespace SonarAnalyzer.Rules.CSharp
 {

@@ -1,4 +1,4 @@
-﻿namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+﻿namespace SonarAnalyzer.DataFlowAnalysis
 {
     public sealed class CollectionCapacityConstraint : SymbolicValueConstraint
     {

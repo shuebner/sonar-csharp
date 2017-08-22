@@ -23,13 +23,13 @@ using FluentAssertions.Execution;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
-using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
+using SonarAnalyzer.DataFlowAnalysis;
+using SonarAnalyzer.DataFlowAnalysis.CSharp;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using CSharpExplodedGraphWalker = SonarAnalyzer.Helpers.FlowAnalysis.CSharp.CSharpExplodedGraphWalker;
-using LiveVariableAnalysis = SonarAnalyzer.Helpers.FlowAnalysis.CSharp.LiveVariableAnalysis;
+using CSharpExplodedGraphWalker = SonarAnalyzer.DataFlowAnalysis.CSharp.CSharpExplodedGraphWalker;
+using CSharpLiveVariableAnalysis = SonarAnalyzer.DataFlowAnalysis.CSharp.CSharpLiveVariableAnalysis;
 using TestCategory = Microsoft.VisualStudio.TestTools.UnitTesting.TestCategoryAttribute;
 using TestClass = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
 using TestMethod = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
@@ -65,7 +65,7 @@ namespace NS
             var bSymbol = semanticModel.GetDeclaredSymbol(varDeclarators.First(d => d.Identifier.ToString() == "b"));
 
             var cfg = ControlFlowGraph.Create(method.Body, semanticModel);
-            var lva = LiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, methodSymbol, semanticModel, lva);
             var explorationEnded = false;
@@ -118,7 +118,7 @@ namespace NS
             var outParameterSymbol = semanticModel.GetDeclaredSymbol(parameters.First(d => d.Identifier.ToString() == "outParameter"));
 
             var cfg = ControlFlowGraph.Create(method.Body, semanticModel);
-            var lva = LiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, methodSymbol, semanticModel, lva);
             var explorationEnded = false;
@@ -161,7 +161,7 @@ namespace NS
             var methodSymbol = semanticModel.GetDeclaredSymbol(method);
 
             var cfg = ControlFlowGraph.Create(method.Body, semanticModel);
-            var lva = LiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, methodSymbol, semanticModel, lva);
             var explorationEnded = false;
@@ -192,7 +192,7 @@ namespace NS
             var bSymbol = semanticModel.GetDeclaredSymbol(varDeclarators.First(d => d.Identifier.ToString() == "b"));
 
             var cfg = ControlFlowGraph.Create(method.Body, semanticModel);
-            var lva = LiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, methodSymbol, semanticModel, lva);
             var explorationEnded = false;
@@ -248,7 +248,7 @@ namespace NS
             var aSymbol = semanticModel.GetDeclaredSymbol(varDeclarators.First(d => d.Identifier.ToString() == "a"));
 
             var cfg = ControlFlowGraph.Create(method.Body, semanticModel);
-            var lva = LiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, methodSymbol, semanticModel, lva);
             var explorationEnded = false;
@@ -296,7 +296,7 @@ namespace NS
             var inParameterSymbol = semanticModel.GetDeclaredSymbol(parameters.First(d => d.Identifier.ToString() == "inParameter"));
 
             var cfg = ControlFlowGraph.Create(method.Body, semanticModel);
-            var lva = LiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, methodSymbol, semanticModel, lva);
             var explorationEnded = false;
@@ -375,7 +375,7 @@ namespace NS
             var aSymbol = semanticModel.GetDeclaredSymbol(varDeclarators.First(d => d.Identifier.ToString() == "a"));
 
             var cfg = ControlFlowGraph.Create(method.Body, semanticModel);
-            var lva = LiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, methodSymbol, semanticModel, lva);
             var explorationEnded = false;
@@ -415,7 +415,7 @@ namespace NS
             var methodSymbol = semanticModel.GetDeclaredSymbol(method);
 
             var cfg = ControlFlowGraph.Create(method.Body, semanticModel);
-            var lva = LiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, methodSymbol, semanticModel, lva);
             var explorationEnded = false;
@@ -449,7 +449,7 @@ namespace NS
             var methodSymbol = semanticModel.GetDeclaredSymbol(method);
 
             var cfg = ControlFlowGraph.Create(method.Body, semanticModel);
-            var lva = LiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, methodSymbol, semanticModel, lva);
             var explorationEnded = false;
@@ -497,7 +497,7 @@ namespace NS
             var bSymbol = semanticModel.GetDeclaredSymbol(varDeclarators.First(d => d.Identifier.ToString() == "b"));
 
             var cfg = ControlFlowGraph.Create(method.Body, semanticModel);
-            var lva = LiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, methodSymbol, semanticModel, lva);
 
@@ -563,7 +563,7 @@ namespace NS
             propertySymbol.Should().NotBeNull();
 
             var cfg = ControlFlowGraph.Create(method.Body, semanticModel);
-            var lva = LiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, methodSymbol, semanticModel, lva);
             var explorationEnded = false;
@@ -600,7 +600,7 @@ namespace NS
             var methodSymbol = semanticModel.GetDeclaredSymbol(method);
 
             var cfg = ControlFlowGraph.Create(method.Body, semanticModel);
-            var lva = LiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, methodSymbol, semanticModel, lva);
             var explorationEnded = false;
@@ -667,7 +667,7 @@ namespace TesteAnalyzer
             var methodSymbol = semanticModel.GetDeclaredSymbol(method);
 
             var cfg = ControlFlowGraph.Create(method.Body, semanticModel);
-            var lva = LiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
+            var lva = CSharpLiveVariableAnalysis.Analyze(cfg, methodSymbol, semanticModel);
 
             var explodedGraph = new CSharpExplodedGraphWalker(cfg, methodSymbol, semanticModel, lva);
             var explorationEnded = false;

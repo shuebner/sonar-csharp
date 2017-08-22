@@ -23,8 +23,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using SonarAnalyzer.Common;
 using SonarAnalyzer.Helpers;
-using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
-using CSharpExplodedGraphWalker = SonarAnalyzer.Helpers.FlowAnalysis.CSharp.CSharpExplodedGraphWalker;
+using SonarAnalyzer.DataFlowAnalysis.CSharp;
+using CSharpExplodedGraphWalker = SonarAnalyzer.DataFlowAnalysis.CSharp.CSharpExplodedGraphWalker;
 
 namespace SonarAnalyzer.Rules.CSharp
 {

@@ -23,8 +23,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SonarAnalyzer.Helpers.FlowAnalysis.Common;
-using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
+using SonarAnalyzer.DataFlowAnalysis;
+using SonarAnalyzer.DataFlowAnalysis.CSharp;
 using System.Linq;
 
 namespace SonarAnalyzer.UnitTest.Helpers
@@ -58,7 +58,7 @@ namespace NS
             SemanticModel semanticModel;
             var method = CompileWithMethodBody(input, "Bar", out semanticModel);
             var expression = method.ExpressionBody.Expression;
-            var cfg = SonarAnalyzer.Helpers.FlowAnalysis.CSharp.ControlFlowGraph.Create(expression, semanticModel);
+            var cfg = SonarAnalyzer.DataFlowAnalysis.CSharp.ControlFlowGraph.Create(expression, semanticModel);
             VerifyMinimalCfg(cfg);
         }
 

@@ -25,7 +25,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using SonarAnalyzer.Common;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     public sealed class ProgramState : IEquatable<ProgramState>
     {

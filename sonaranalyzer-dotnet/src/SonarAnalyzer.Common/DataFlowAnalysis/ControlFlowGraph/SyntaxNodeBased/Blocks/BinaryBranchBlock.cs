@@ -21,7 +21,7 @@
 using System;
 using Microsoft.CodeAnalysis;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     public class BinaryBranchBlock : BranchBlock
     {

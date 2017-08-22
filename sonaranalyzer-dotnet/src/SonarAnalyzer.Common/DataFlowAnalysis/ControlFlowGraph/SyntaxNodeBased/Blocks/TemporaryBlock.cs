@@ -22,7 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
+namespace SonarAnalyzer.DataFlowAnalysis
 {
     internal sealed class TemporaryBlock : Block
     {
