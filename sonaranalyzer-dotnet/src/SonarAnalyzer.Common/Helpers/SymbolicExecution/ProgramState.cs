@@ -439,11 +439,11 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
                 return this;
             }
 
-            var updatedConstraintsMap = SymbolicValueHelpers.RemoveConstraintForSymbolicValue(symbolicValue, constraint, Constraints);
+            var constraintsMap = Constraints.RemoveConstraint(symbolicValue, constraint);
 
             return new ProgramState(
                 Values,
-                updatedConstraintsMap,
+                constraintsMap,
                 ProgramPointVisitCounts,
                 ExpressionStack,
                 Relationships);
@@ -456,15 +456,15 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
                 return this;
             }
 
-            var updatedConstraintsMap = SymbolicValueHelpers.AddConstraintForSymbolicValue(
-                symbolicValue, constraint, Constraints);
-            updatedConstraintsMap = SymbolicValueHelpers.AddConstraintTo<EqualsRelationship>(
-                constraint, symbolicValue, this, updatedConstraintsMap);
+            var updatedConstraintsMap = Constraints
+                .AddConstraint(symbolicValue, constraint)
+                .AddConstraintTo<EqualsRelationship>(constraint, symbolicValue, this);
 
+            // TODO: this should not be here
             if (constraint is BoolConstraint)
             {
-                updatedConstraintsMap = SymbolicValueHelpers.AddConstraintTo<NotEqualsRelationship>(
-                    constraint.OppositeForLogicalNot, symbolicValue, this, updatedConstraintsMap);
+                updatedConstraintsMap = updatedConstraintsMap.AddConstraintTo<NotEqualsRelationship>(
+                    constraint.OppositeForLogicalNot, symbolicValue, this);
             }
 
             return new ProgramState(
@@ -473,6 +473,74 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
                 ProgramPointVisitCounts,
                 ExpressionStack,
                 Relationships);
+        }
+    }
+
+    public static class ConstraintsMapHelpers
+    {
+        public static ImmutableDictionary<SymbolicValue, SymbolicValueConstraints> AddConstraintTo<TRelationship>(
+            this ImmutableDictionary<SymbolicValue, SymbolicValueConstraints> constraintsMap,
+            SymbolicValueConstraint constraint, SymbolicValue symbolicValue, ProgramState programState)
+            where TRelationship : BinaryRelationship
+        {
+            var newConstraintsMap = constraintsMap;
+            var equalSymbols = programState.Relationships
+                            .OfType<TRelationship>()
+                            .Select(r => GetOtherOperandFromMatchingRelationship(symbolicValue, r))
+                            .Where(e => e != null);
+
+            foreach (var equalSymbol in equalSymbols.Where(e => !programState.HasConstraint(e, constraint)))
+            {
+                newConstraintsMap = AddConstraint(newConstraintsMap, equalSymbol, constraint);
+            }
+
+            return newConstraintsMap;
+        }
+
+        private static SymbolicValue GetOtherOperandFromMatchingRelationship(
+            SymbolicValue symbolicValue, BinaryRelationship relationship)
+        {
+            if (relationship.RightOperand == symbolicValue)
+            {
+                return relationship.LeftOperand;
+            }
+            else if (relationship.LeftOperand == symbolicValue)
+            {
+                return relationship.RightOperand;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public static ImmutableDictionary<SymbolicValue, SymbolicValueConstraints> AddConstraint(
+            this ImmutableDictionary<SymbolicValue, SymbolicValueConstraints> constraintsMap,
+            SymbolicValue symbolicValue, SymbolicValueConstraint constraint)
+        {
+            var constraints = constraintsMap.GetValueOrDefault(symbolicValue);
+
+            var updatedConstraints = constraints != null
+                ? constraints.WithConstraint(constraint)
+                : SymbolicValueConstraints.Create(constraint);
+
+            return constraintsMap.SetItem(symbolicValue, updatedConstraints);
+        }
+
+        public static ImmutableDictionary<SymbolicValue, SymbolicValueConstraints> RemoveConstraint(
+            this ImmutableDictionary<SymbolicValue, SymbolicValueConstraints> constraintsMap,
+            SymbolicValue symbolicValue, SymbolicValueConstraint constraint)
+        {
+            var constraints = constraintsMap.GetValueOrDefault(symbolicValue);
+
+            if (constraints == null)
+            {
+                return constraintsMap;
+            }
+
+            var updatedConstraints = constraints.WithoutConstraint(constraint);
+
+            return constraintsMap.SetItem(symbolicValue, updatedConstraints);
         }
     }
 }

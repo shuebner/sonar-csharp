@@ -55,7 +55,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
             {
                 if (oldConstraint == null)
                 {
-                    return new[] { SetConstraint(constraint, currentProgramState) };
+                    return new[] { currentProgramState.SetConstraint(this, constraint) };
                 }
 
                 if (oldConstraint != constraint)

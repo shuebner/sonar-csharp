@@ -115,11 +115,11 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 return programState;
             }
 
-            if (programState.HasConstraint(sv.InnerSymbolicValue, ObjectConstraint.Null))
+            if (programState.HasConstraint(sv.WrappedSymbolicValue, ObjectConstraint.Null))
             {
                 return SetConstraint(sv, NullableValueConstraint.NoValue, node, programState);
             }
-            else if (programState.HasConstraint(sv.InnerSymbolicValue, ObjectConstraint.NotNull))
+            else if (programState.HasConstraint(sv.WrappedSymbolicValue, ObjectConstraint.NotNull))
             {
                 return SetConstraint(sv, NullableValueConstraint.HasValue, node, programState);
             }
