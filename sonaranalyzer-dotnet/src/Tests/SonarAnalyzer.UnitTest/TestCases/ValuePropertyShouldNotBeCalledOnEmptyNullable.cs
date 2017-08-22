@@ -45,11 +45,6 @@ namespace Tests.Diagnostics
             var y = i.Value; // Compliant - we don't know whether x has value or not
         }
 
-        void Foo4(int? x = null)
-        {
-            var y = x.Value; // Noncompliant
-        }
-
         void Foo5(int? x = 42)
         {
             var y = x.Value; // Compliant - we don't know whether x has value or not

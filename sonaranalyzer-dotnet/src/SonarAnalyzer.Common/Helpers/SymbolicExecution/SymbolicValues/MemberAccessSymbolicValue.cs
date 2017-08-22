@@ -18,6 +18,9 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+using System.Collections.Generic;
+using System.Linq;
+
 namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 {
     public class MemberAccessSymbolicValue : SymbolicValue
@@ -35,6 +38,34 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
         public override string ToString()
         {
             return $"{MemberExpression}.{memberName}";
+        }
+
+        public override IEnumerable<ProgramState> TrySetConstraint(SymbolicValueConstraint constraint,
+            ProgramState currentProgramState)
+        {
+            // TODO: Move this somewhere else
+            if (MemberExpression is NullableSymbolicValue)
+            {
+                if (memberName == "HasValue" &&
+                    constraint is BoolConstraint)
+                {
+                    var oldConstraint = currentProgramState.Constraints.GetValueOrDefault(MemberExpression)
+                        ?.GetConstraintOrDefault<NullableValueConstraint>();
+                    if (oldConstraint != null)
+                    {
+                        var isImpossibleState =
+                            (oldConstraint == NullableValueConstraint.HasValue && constraint == BoolConstraint.False) ||
+                            (oldConstraint == NullableValueConstraint.NoValue && constraint == BoolConstraint.True);
+                        return isImpossibleState
+                            ? Enumerable.Empty<ProgramState>()
+                            : new[] { currentProgramState };
+                    }
+                }
+
+                return MemberExpression.TrySetConstraint(constraint, currentProgramState);
+            }
+
+            return base.TrySetConstraint(constraint, currentProgramState);
         }
     }
 }

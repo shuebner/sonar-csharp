@@ -26,7 +26,6 @@ using SonarAnalyzer.Common;
 using SonarAnalyzer.Helpers;
 using SonarAnalyzer.Helpers.FlowAnalysis;
 using SonarAnalyzer.Helpers.FlowAnalysis.CSharp;
-using CSharpExplodedGraphWalker = SonarAnalyzer.Helpers.FlowAnalysis.CSharp.CSharpExplodedGraphWalker;
 
 namespace SonarAnalyzer.Rules.CSharp
 {

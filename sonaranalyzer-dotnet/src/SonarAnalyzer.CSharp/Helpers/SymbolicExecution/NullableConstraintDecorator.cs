@@ -27,6 +27,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 {
     internal class NullableConstraintDecorator : ConstraintDecorator
     {
+        private const string HasValueLiteral = "HasValue";
         private const string ValueLiteral = "Value";
 
         public NullableConstraintDecorator(CSharpExplodedGraphWalker explodedGraphWalker)
@@ -48,12 +49,15 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                         var memberAccess = (MemberAccessExpressionSyntax)node.Instruction;
                         var symbol = SemanticModel.GetSymbolInfo(memberAccess.Expression).Symbol;
 
-                        if (IsValuePropertyAccess(memberAccess) &&
+                        if (symbol.IsNullable() &&
                             ExplodedGraphWalker.IsSymbolTracked(symbol))
                         {
                             var sv = newProgramState.GetSymbolValue(symbol);
-                            newProgramState = SetConstraint(sv, NullableValueConstraint.HasValue, memberAccess,
-                                newProgramState);
+                            if (memberAccess.Name.Identifier.ValueText == ValueLiteral)
+                            {
+                                newProgramState = SetConstraint(sv, NullableValueConstraint.HasValue,
+                                    memberAccess.Expression, newProgramState);
+                            }
                         }
                         break;
                     }
@@ -105,17 +109,17 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                 return programState;
             }
 
-            var sv = programState.GetSymbolValue(symbol);
-            if (sv.InnerSymbolicValue == null)
+            var sv = programState.GetSymbolValue(symbol) as NullableSymbolicValue;
+            if (sv?.WrappedSymbolicValue == null)
             {
                 return programState;
             }
 
-            if (sv.InnerSymbolicValue.HasConstraint(ObjectConstraint.Null, programState))
+            if (sv.WrappedSymbolicValue.HasConstraint(ObjectConstraint.Null, programState))
             {
                 return SetConstraint(sv, NullableValueConstraint.NoValue, node, programState);
             }
-            else if (sv.InnerSymbolicValue.HasConstraint(ObjectConstraint.NotNull, programState))
+            else if (sv.WrappedSymbolicValue.HasConstraint(ObjectConstraint.NotNull, programState))
             {
                 return SetConstraint(sv, NullableValueConstraint.HasValue, node, programState);
             }

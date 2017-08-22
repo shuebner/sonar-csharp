@@ -32,16 +32,22 @@ namespace SonarAnalyzer.UnitTest.Rules
         {
             Verifier.VerifyCSharpAnalyzer(@"
 using System;
-public class Foo
+class Foo
 {
-    void Foo6()
+    public void TestNullConstructor()
     {
-        int? i = 1;
-        var x = (int)i;
+        int? i2 = new Nullable<int>();
+        if (i2.HasValue)
+        {
+            Console.WriteLine(i2.Value);
+        }
+
+        Console.WriteLine(i2.Value); // Noncompliant
     }
 }",
                 new ValuePropertyShouldNotBeCalledOnEmptyNullable());
         }
+
 
         [TestMethod]
         [TestCategory("Rule")]

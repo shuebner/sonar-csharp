@@ -41,8 +41,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         {
             decorators = ImmutableList.Create<ConstraintDecorator>(
                 new ObjectConstraintDecorator(this),
-                new NullableConstraintDecorator(this),
                 new BooleanConstraintDecorator(this),
+                new NullableConstraintDecorator(this),
                 new CollectionConstraintDecorator(this),
                 new DisposableConstraintDecorator(this));
         }
@@ -418,7 +418,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             if (ShouldConsumeValue(parenthesizedExpression))
             {
                 var newProgramState = programState.PopValue();
-                System.Diagnostics.Debug.Assert(!newProgramState.HasValue);
+                Debug.Assert(!newProgramState.HasValue);
 
                 return newProgramState;
             }
@@ -537,21 +537,23 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         {
             SymbolicValue memberExpression;
             var newProgramState = programState.PopValue(out memberExpression);
+
             SymbolicValue sv = null;
             var identifier = memberAccess.Name as IdentifierNameSyntax;
             if (identifier != null)
             {
-                var symbol = SemanticModel.GetSymbolInfo(identifier).Symbol;
-                var fieldSymbol = symbol as IFieldSymbol;
-                if (fieldSymbol != null && (memberAccess.IsOnThis() || fieldSymbol.IsConst))
+                var fieldSymbol = SemanticModel.GetSymbolInfo(identifier).Symbol as IFieldSymbol;
+                if (fieldSymbol != null &&
+                    (memberAccess.IsOnThis() || fieldSymbol.IsConst))
                 {
-                    sv = newProgramState.GetSymbolValue(symbol);
+                    sv = newProgramState.GetSymbolValue(fieldSymbol);
                     if (sv == null)
                     {
                         newProgramState = CreateAndStoreFieldSymbolicValue(newProgramState, fieldSymbol, out sv);
                     }
                 }
             }
+
             if (sv == null)
             {
                 sv = new MemberAccessSymbolicValue(memberExpression, memberAccess.Name.Identifier.ValueText);
@@ -649,9 +651,34 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
 
         private ProgramState VisitObjectCreation(ObjectCreationExpressionSyntax ctor, ProgramState programState)
         {
-            return programState
-                .PopValues(ctor.ArgumentList?.Arguments.Count ?? 0)
-                .PushValue(new SymbolicValue());
+            var methodSymbol = SemanticModel.GetSymbolInfo(ctor).Symbol as IMethodSymbol;
+
+            SymbolicValue sv;
+            var numberOfArgsToPop = ctor.ArgumentList?.Arguments.Count ?? 0;
+            var newProgramState = programState;
+
+            if (methodSymbol?.ReceiverType?.OriginalDefinition.Is(KnownType.System_Nullable_T) == true)
+            {
+                if (methodSymbol.Parameters.Length == 0)
+                {
+                    sv = new NullableSymbolicValue(null);
+                }
+                else
+                {
+                    SymbolicValue innverSv;
+                    newProgramState = newProgramState.PopValue(out innverSv);
+                    numberOfArgsToPop--;
+                    sv = new NullableSymbolicValue(innverSv);
+                }
+            }
+            else
+            {
+                sv = new SymbolicValue();
+            }
+
+            return newProgramState
+                .PopValues(numberOfArgsToPop)
+                .PushValue(sv);
         }
 
         private static ProgramState VisitInitializer(SyntaxNode instruction, ExpressionSyntax parenthesizedExpression,
@@ -748,7 +775,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             var leftSymbol = SemanticModel.GetSymbolInfo(assignment.Left).Symbol;
             if (leftSymbol.IsNullable())
             {
-                sv = new SymbolicValue(sv);
+                sv = new NullableSymbolicValue(sv);
             }
 
             newProgramState = newProgramState.PushValue(sv);
@@ -779,7 +806,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             if (leftSymbol.IsNullable() &&
                 (!rightSymbol.IsNullable() || (rightSymbol == null && sv != null)))
             {
-                sv = new SymbolicValue(sv);
+                sv = new NullableSymbolicValue(sv);
             }
 
             return newProgramState.StoreSymbolicValue(leftSymbol, sv);

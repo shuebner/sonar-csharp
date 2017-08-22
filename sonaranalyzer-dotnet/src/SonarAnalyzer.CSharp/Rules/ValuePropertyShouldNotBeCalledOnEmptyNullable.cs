@@ -48,7 +48,8 @@ namespace SonarAnalyzer.Rules.CSharp
             SyntaxNodeAnalysisContext context)
         {
             explodedGraph.Subscribe(new NullableConstraintObserver(args =>
-                context.ReportDiagnostic(Diagnostic.Create(rule, args.Instruction.GetLocation(), args.Instruction))));
+                context.ReportDiagnostic(Diagnostic.Create(rule, args.Instruction.Parent.GetLocation(),
+                    args.Instruction))));
 
             explodedGraph.Walk();
         }

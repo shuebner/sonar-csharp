@@ -37,12 +37,9 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 
         private static int SymbolicValueCounter = 0;
 
-        public SymbolicValue InnerSymbolicValue { get; }
-
-        internal SymbolicValue(SymbolicValue innerSymbolicValue = null)
+        internal SymbolicValue()
             : this((SymbolicValueCounter++).ToString())
         {
-            InnerSymbolicValue = innerSymbolicValue;
         }
 
         private SymbolicValue(string identifier)

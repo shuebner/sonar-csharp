@@ -49,7 +49,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
                 new ConstraintAdded(symbolicValue, constraint, syntaxNode, newProgramState, programState));
 
             return newProgramState;
-        }        
+        }
 
         public virtual ProgramState PreProcessInstruction(ExplodedGraphNode node, ProgramState programState)
             => programState;
