@@ -137,7 +137,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                     {
                         SymbolicValue argSV;
                         node.ProgramState.PopValue(out argSV);
-                        if (argSV.HasConstraint(ObjectConstraint.Null, newProgramState))
+                        if (newProgramState.HasConstraint(argSV, ObjectConstraint.Null))
                         {
                             var sv = newProgramState.ExpressionStack.Peek();
                             newProgramState = SetConstraint(sv, ObjectConstraint.Null, node.Instruction, newProgramState);
@@ -187,7 +187,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
         private ProgramState SetNonNullConstraintIfValueType(ITypeSymbol typeSymbol,
             SymbolicValue symbolicValue, SyntaxNode node, ProgramState programState)
         {
-            if (symbolicValue.HasConstraint(ObjectConstraint.NotNull, programState))
+            if (programState.HasConstraint(symbolicValue, ObjectConstraint.NotNull))
             {
                 return programState;
             }

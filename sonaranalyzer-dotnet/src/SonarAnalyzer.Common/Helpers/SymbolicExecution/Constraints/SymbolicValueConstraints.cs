@@ -90,7 +90,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
             SymbolicValueConstraint constraint = null;
             return constraints.TryGetValue(typeof(T), out constraint)
                 ? (T)constraint
-                : null;
+                : default(T);
         }
 
         internal bool HasConstraint(SymbolicValueConstraint constraint)

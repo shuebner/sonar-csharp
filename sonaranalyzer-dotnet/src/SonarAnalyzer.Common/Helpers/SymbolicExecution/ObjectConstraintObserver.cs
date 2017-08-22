@@ -33,7 +33,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis
         public override void OnNext(ConstraintAdding value)
         {
             if (value.Constraint == ObjectConstraint.Null &&
-                value.SymbolicValue.HasConstraint(ObjectConstraint.NotNull, value.ProgramState))
+                value.ProgramState.HasConstraint(value.SymbolicValue, ObjectConstraint.NotNull))
             {
                 ReportAction(value);
             }

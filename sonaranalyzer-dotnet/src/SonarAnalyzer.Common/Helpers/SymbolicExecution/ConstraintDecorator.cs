@@ -43,7 +43,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
             ExplodedGraphWalker.Publish(
                 new ConstraintAdding(symbolicValue, constraint, syntaxNode, programState));
 
-            var newProgramState = symbolicValue.SetConstraint(constraint, programState);
+            var newProgramState = programState.SetConstraint(symbolicValue, constraint);
 
             ExplodedGraphWalker.Publish(
                 new ConstraintAdded(symbolicValue, constraint, syntaxNode, newProgramState, programState));

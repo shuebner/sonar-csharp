@@ -419,5 +419,60 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 
             return hash;
         }
+
+        public bool TryGetConstraints(SymbolicValue symbolicValue, out SymbolicValueConstraints constraints)
+        {
+            return Constraints.TryGetValue(symbolicValue, out constraints);
+        }
+
+        public bool HasConstraint(SymbolicValue symbolicValue, SymbolicValueConstraint constraint)
+        {
+            SymbolicValueConstraints constraints;
+            return Constraints.TryGetValue(symbolicValue, out constraints)
+                && constraints.HasConstraint(constraint);
+        }
+
+        public ProgramState RemoveConstraint(SymbolicValue symbolicValue, SymbolicValueConstraint constraint)
+        {
+            if (constraint == null)
+            {
+                return this;
+            }
+
+            var updatedConstraintsMap = SymbolicValueHelpers.RemoveConstraintForSymbolicValue(symbolicValue, constraint, Constraints);
+
+            return new ProgramState(
+                Values,
+                updatedConstraintsMap,
+                ProgramPointVisitCounts,
+                ExpressionStack,
+                Relationships);
+        }
+
+        internal ProgramState SetConstraint(SymbolicValue symbolicValue, SymbolicValueConstraint constraint)
+        {
+            if (constraint == null)
+            {
+                return this;
+            }
+
+            var updatedConstraintsMap = SymbolicValueHelpers.AddConstraintForSymbolicValue(
+                symbolicValue, constraint, Constraints);
+            updatedConstraintsMap = SymbolicValueHelpers.AddConstraintTo<EqualsRelationship>(
+                constraint, symbolicValue, this, updatedConstraintsMap);
+
+            if (constraint is BoolConstraint)
+            {
+                updatedConstraintsMap = SymbolicValueHelpers.AddConstraintTo<NotEqualsRelationship>(
+                    constraint.OppositeForLogicalNot, symbolicValue, this, updatedConstraintsMap);
+            }
+
+            return new ProgramState(
+                Values,
+                updatedConstraintsMap,
+                ProgramPointVisitCounts,
+                ExpressionStack,
+                Relationships);
+        }
     }
 }

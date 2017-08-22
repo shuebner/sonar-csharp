@@ -611,7 +611,8 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
             var isValueTypeOperator = op?.ContainingType?.IsValueType ?? false;
 
             var isLiftedOperator = isValueTypeOperator &&
-                (leftSymbol.IsNull(programState) || rightSymbol.IsNull(programState));
+                (programState.HasConstraint(leftSymbol, ObjectConstraint.Null)
+                || programState.HasConstraint(rightSymbol, ObjectConstraint.Null));
 
             var comparisonValue = isLiftedOperator ? SymbolicValue.False : svFactory(leftSymbol, rightSymbol);
 

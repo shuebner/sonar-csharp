@@ -44,10 +44,10 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.CSharp
                     {
                         SymbolicValue argSV;
                         node.ProgramState.PopValue(out argSV);
-                        if (argSV.HasConstraint(ObjectConstraint.Null, newProgramState))
+                        if (newProgramState.HasConstraint(argSV, ObjectConstraint.Null))
                         {
                             var sv = newProgramState.ExpressionStack.Peek();
-                            newProgramState = sv.SetConstraint(BoolConstraint.False, newProgramState);
+                            newProgramState = newProgramState.SetConstraint(sv, BoolConstraint.False);
                         }
                         break;
                     }

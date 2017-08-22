@@ -85,7 +85,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
 
             SymbolicValueConstraints oldConstraints;
             BoolConstraint oldBoolConstraint = null;
-            if (TryGetConstraints(currentProgramState, out oldConstraints))
+            if (currentProgramState.TryGetConstraints(this, out oldConstraints))
             {
                 oldBoolConstraint = oldConstraints.GetConstraintOrDefault<BoolConstraint>();
             }
@@ -97,9 +97,9 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis.Common
             }
 
             SymbolicValueConstraints leftConstraints;
-            var leftHasConstraint = LeftOperand.TryGetConstraints(currentProgramState, out leftConstraints);
+            var leftHasConstraint = currentProgramState.TryGetConstraints(LeftOperand, out leftConstraints);
             SymbolicValueConstraints rightConstraints;
-            var rightHasConstraint = RightOperand.TryGetConstraints(currentProgramState, out rightConstraints);
+            var rightHasConstraint = currentProgramState.TryGetConstraints(RightOperand, out rightConstraints);
 
             var relationship = GetRelationship(boolConstraint);
 

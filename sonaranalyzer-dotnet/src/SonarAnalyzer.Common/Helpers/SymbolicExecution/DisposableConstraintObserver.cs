@@ -33,7 +33,7 @@ namespace SonarAnalyzer.Helpers.FlowAnalysis
         public override void OnNext(ConstraintAdding value)
         {
             if (value.Constraint == DisposableConstraint.Disposed &&
-                value.SymbolicValue.HasConstraint(DisposableConstraint.Disposed, value.ProgramState))
+                value.ProgramState.HasConstraint(value.SymbolicValue, DisposableConstraint.Disposed))
             {
                 ReportAction(value);
             }
