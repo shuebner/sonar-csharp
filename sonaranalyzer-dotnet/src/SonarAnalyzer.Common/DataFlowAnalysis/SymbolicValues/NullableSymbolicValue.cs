@@ -18,14 +18,16 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using SonarAnalyzer.Helpers;
 
 namespace SonarAnalyzer.DataFlowAnalysis
 {
     public class NullableSymbolicValue : SymbolicValue
     {
+        private const string HasValueMember = nameof(Nullable<int>.HasValue);
+
         public SymbolicValue WrappedSymbolicValue { get; }
 
         public NullableSymbolicValue(SymbolicValue wrappedSymbolicValue)
@@ -33,12 +35,40 @@ namespace SonarAnalyzer.DataFlowAnalysis
             WrappedSymbolicValue = wrappedSymbolicValue;
         }
 
-        public override IEnumerable<ProgramState> TrySetConstraint(SymbolicValueConstraint constraint,
-            ProgramState currentProgramState)
+        public override bool CanHandleMemberAccess(string memberName)
         {
+            return memberName == HasValueMember;
+        }
+
+        public override IEnumerable<ProgramState> HandleMemberAccess(SymbolicValueConstraint memberConstraint, 
+            string memberName, ProgramState programState)
+        {
+            if (memberName == HasValueMember)
+            {
+                if (!(memberConstraint is BoolConstraint))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(memberConstraint),
+                        $"Only BoolConstraint is supported for '{HasValueMember}'");
+                }
+
+                var constraint = memberConstraint == BoolConstraint.True
+                    ? NullableValueConstraint.HasValue
+                    : NullableValueConstraint.NoValue;
+
+                return TrySetConstraint(constraint, programState);
+            }
+
+            throw new InvalidOperationException(
+                $"Cannot handle '{memberName}'. Either implement handler or update the CanHandleMemberAccess method.");
+        }
+
+        public override IEnumerable<ProgramState> TrySetConstraint(SymbolicValueConstraint constraint,
+            ProgramState programState)
+        {
+            // TODO: should this be argument exception?
             if (constraint == null)
             {
-                return new[] { currentProgramState };
+                return new[] { programState };
             }
 
             if (constraint is ObjectConstraint)
@@ -47,27 +77,15 @@ namespace SonarAnalyzer.DataFlowAnalysis
                     ? NullableValueConstraint.NoValue
                     : NullableValueConstraint.HasValue;
 
-                return TrySetConstraint(optionalConstraint, currentProgramState);
+                return base.TrySetConstraint(optionalConstraint, programState);
             }
 
-            var oldConstraint = currentProgramState.Constraints.GetValueOrDefault(this)
-                ?.GetConstraintOrDefault<NullableValueConstraint>();
             if (constraint is NullableValueConstraint)
             {
-                if (oldConstraint == null)
-                {
-                    return new[] { currentProgramState.SetConstraint(this, constraint) };
-                }
-
-                if (oldConstraint != constraint)
-                {
-                    return Enumerable.Empty<ProgramState>();
-                }
-
-                return new[] { currentProgramState };
+                return base.TrySetConstraint(constraint, programState);
             }
 
-            return TrySetConstraint(NullableValueConstraint.HasValue, currentProgramState)
+            return TrySetConstraint(NullableValueConstraint.HasValue, programState)
                 .SelectMany(ps => WrappedSymbolicValue.TrySetConstraint(constraint, ps));
         }
 

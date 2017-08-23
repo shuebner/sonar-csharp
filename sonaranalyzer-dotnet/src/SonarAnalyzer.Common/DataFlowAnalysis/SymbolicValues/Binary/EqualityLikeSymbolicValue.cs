@@ -83,12 +83,7 @@ namespace SonarAnalyzer.DataFlowAnalysis
                 return new[] { currentProgramState };
             }
 
-            SymbolicValueConstraints oldConstraints;
-            BoolConstraint oldBoolConstraint = null;
-            if (currentProgramState.TryGetConstraints(this, out oldConstraints))
-            {
-                oldBoolConstraint = oldConstraints.GetConstraintOrDefault<BoolConstraint>();
-            }
+            var oldBoolConstraint = currentProgramState.GetConstraint<BoolConstraint>(this);
 
             if (oldBoolConstraint != null /* could also be ObjectConstraint.NotNull, which can be overridden */ &&
                 oldBoolConstraint != boolConstraint)

@@ -342,7 +342,7 @@ namespace SonarAnalyzer.DataFlowAnalysis
                 symbol.ContainingSymbol.Equals(declaration);
         }
 
-        public bool IsFieldSymbol(ISymbol symbol)
+        private bool IsFieldSymbol(ISymbol symbol)
         {
             var field = symbol as IFieldSymbol;
 
@@ -351,6 +351,11 @@ namespace SonarAnalyzer.DataFlowAnalysis
                 declaration.ContainingType
                     .GetSelfAndBaseTypes()
                     .Contains(field.ContainingType));
+        }
+
+        public ProgramState RemoveFieldSymbols(ProgramState programState)
+        {
+            return programState.RemoveSymbols(IsFieldSymbol);
         }
 
         #endregion

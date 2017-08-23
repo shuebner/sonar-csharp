@@ -89,8 +89,9 @@ namespace SonarAnalyzer.DataFlowAnalysis.CSharp
             if (lockBlock != null)
             {
                 newProgramState = newProgramState
-                    .PopValue()
-                    .RemoveSymbols(IsFieldSymbol);
+                    .PopValue();
+
+                newProgramState = RemoveFieldSymbols(newProgramState);
 
                 EnqueueAllSuccessors(block, newProgramState);
                 return;

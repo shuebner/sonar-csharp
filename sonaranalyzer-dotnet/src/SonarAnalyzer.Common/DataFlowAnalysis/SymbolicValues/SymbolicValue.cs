@@ -56,6 +56,15 @@ namespace SonarAnalyzer.DataFlowAnalysis
             return base.ToString();
         }
 
+        public virtual bool CanHandleMemberAccess(string memberName) => false;
+
+        public virtual IEnumerable<ProgramState> HandleMemberAccess(SymbolicValueConstraint constraint, string memberName,
+            ProgramState programState)
+        {
+            throw new InvalidOperationException(
+                $"'{nameof(CanHandleMemberAccess)}' and '{nameof(HandleMemberAccess)}' must be overriden in pairs.");
+        }
+
         protected IEnumerable<ProgramState> ThrowIfTooMany(IEnumerable<ProgramState> states)
         {
             var stateList = states.ToList();
@@ -70,19 +79,24 @@ namespace SonarAnalyzer.DataFlowAnalysis
         public virtual IEnumerable<ProgramState> TrySetConstraint(SymbolicValueConstraint constraint,
             ProgramState programState)
         {
+            // TODO: should this be argument exception?
             if (constraint == null)
             {
                 return new[] { programState };
             }
 
-            SymbolicValueConstraints oldConstraints;
-            if (!programState.Constraints.TryGetValue(this, out oldConstraints))
+            var oldConstraint = programState.GetConstraint(this, constraint.GetType());
+            if (oldConstraint == null)
             {
                 return new[] { programState.SetConstraint(this, constraint) };
             }
 
-            throw new NotSupportedException($"Neither one of {nameof(BoolConstraint)}, {nameof(ObjectConstraint)}, " +
-                $"{nameof(ObjectConstraint)}, {nameof(DisposableConstraint)}.");
+            if (oldConstraint != constraint)
+            {
+                return Enumerable.Empty<ProgramState>();
+            }
+
+            return new[] { programState };
         }
 
         public virtual IEnumerable<ProgramState> TrySetOppositeConstraint(SymbolicValueConstraint constraint,
@@ -123,46 +137,5 @@ namespace SonarAnalyzer.DataFlowAnalysis
 
             return programStates;
         }
-
-        ////private IEnumerable<ProgramState> TrySetBoolConstraint(BoolConstraint constraint,
-        ////    SymbolicValueConstraints oldConstraints, ProgramState currentProgramState)
-        ////{
-        ////    if (constraint.CanSetOn(oldConstraints))
-        ////    {
-        ////        return Enumerable.Empty<ProgramState>();
-        ////    }
-
-        ////    // Either same bool constraint, or previously not null, and now a bool constraint
-        ////    return new[] { SetConstraint(constraint, currentProgramState) };
-        ////}
-
-        ////private IEnumerable<ProgramState> TrySetObjectConstraint(ObjectConstraint constraint,
-        ////    SymbolicValueConstraints oldConstraints, ProgramState currentProgramState)
-        ////{
-        ////    var oldBoolConstraint = oldConstraints.GetConstraintOrDefault<BoolConstraint>();
-        ////    if (oldBoolConstraint != null)
-        ////    {
-        ////        if (constraint == ObjectConstraint.Null)
-        ////        {
-        ////            return Enumerable.Empty<ProgramState>();
-        ////        }
-
-        ////        return new[] { currentProgramState };
-        ////    }
-
-        ////    var oldObjectConstraint = oldConstraints.GetConstraintOrDefault<ObjectConstraint>();
-        ////    if (oldObjectConstraint != null)
-        ////    {
-        ////        if (oldObjectConstraint != constraint)
-        ////        {
-        ////            return Enumerable.Empty<ProgramState>();
-        ////        }
-
-        ////        return new[] { SetConstraint(constraint, currentProgramState) };
-        ////    }
-
-        ////    throw new NotSupportedException($"Neither {nameof(BoolConstraint)}, nor {nameof(ObjectConstraint)}");
-        ////}
     }
-
 }

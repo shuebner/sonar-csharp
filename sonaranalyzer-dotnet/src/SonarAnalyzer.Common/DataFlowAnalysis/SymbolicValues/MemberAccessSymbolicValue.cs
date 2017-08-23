@@ -19,8 +19,6 @@
  */
 
 using System.Collections.Generic;
-using System.Linq;
-using SonarAnalyzer.Helpers;
 
 namespace SonarAnalyzer.DataFlowAnalysis
 {
@@ -44,28 +42,13 @@ namespace SonarAnalyzer.DataFlowAnalysis
         public override IEnumerable<ProgramState> TrySetConstraint(SymbolicValueConstraint constraint,
             ProgramState currentProgramState)
         {
-            // TODO: Move this somewhere else
-            if (MemberExpression is NullableSymbolicValue)
+            if (MemberExpression.CanHandleMemberAccess(memberName))
             {
-                if (memberName == "HasValue" &&
-                    constraint is BoolConstraint)
-                {
-                    var oldConstraint = currentProgramState.Constraints.GetValueOrDefault(MemberExpression)
-                        ?.GetConstraintOrDefault<NullableValueConstraint>();
-                    if (oldConstraint != null)
-                    {
-                        var isImpossibleState =
-                            (oldConstraint == NullableValueConstraint.HasValue && constraint == BoolConstraint.False) ||
-                            (oldConstraint == NullableValueConstraint.NoValue && constraint == BoolConstraint.True);
-                        return isImpossibleState
-                            ? Enumerable.Empty<ProgramState>()
-                            : new[] { currentProgramState };
-                    }
-                }
-
-                return MemberExpression.TrySetConstraint(constraint, currentProgramState);
+                // TODO: should we apply the constraint on ourselves?
+                return MemberExpression.HandleMemberAccess(constraint, memberName, currentProgramState);
             }
 
+            // TODO: apply ObjectConstraint.NotNull on MemberExpression
             return base.TrySetConstraint(constraint, currentProgramState);
         }
     }

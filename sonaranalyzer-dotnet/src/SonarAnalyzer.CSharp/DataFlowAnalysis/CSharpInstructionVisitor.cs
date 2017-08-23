@@ -151,13 +151,16 @@ namespace SonarAnalyzer.DataFlowAnalysis
                 case SyntaxKind.MakeRefExpression:
                 case SyntaxKind.RefTypeExpression:
                 case SyntaxKind.RefValueExpression:
-                case SyntaxKind.MemberBindingExpression:
                 case SyntaxKind.AwaitExpression:
                 case SyntaxKind.AsExpression:
                 case SyntaxKind.IsExpression:
                     newProgramState = newProgramState
                         .PopValue()
                         .PushValue(new SymbolicValue());
+                    break;
+
+                case SyntaxKind.MemberBindingExpression:
+                    // do nothing, we already have the MemberAccessSymbolicValue on the stack
                     break;
 
                 case SyntaxKind.SimpleMemberAccessExpression:
@@ -269,7 +272,7 @@ namespace SonarAnalyzer.DataFlowAnalysis
 
                         if (invocation.Expression.IsOnThis() && !invocation.IsNameof(ExplodedGraphWalker.SemanticModel))
                         {
-                            newProgramState = newProgramState.RemoveSymbols(ExplodedGraphWalker.IsFieldSymbol);
+                            newProgramState = ExplodedGraphWalker.RemoveFieldSymbols(newProgramState);
                         }
                     }
                     break;
@@ -372,7 +375,8 @@ namespace SonarAnalyzer.DataFlowAnalysis
                 .PopValue(out leftSymbol);
 
             return new InvocationVisitor.ReferenceEqualsConstraintHandler(leftSymbol, rightSymbol,
-                equals.Left, equals.Right, newProgramState, ExplodedGraphWalker.SemanticModel).PushWithConstraint();
+                    equals.Left, equals.Right, newProgramState, ExplodedGraphWalker.SemanticModel)
+                .PushWithConstraint();
         }
 
         private ProgramState VisitComparisonBinaryOperator(ProgramState programState, BinaryExpressionSyntax comparison,

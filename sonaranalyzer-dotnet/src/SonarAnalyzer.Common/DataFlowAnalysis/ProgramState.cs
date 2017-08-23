@@ -29,9 +29,9 @@ namespace SonarAnalyzer.DataFlowAnalysis
 {
     public sealed class ProgramState : IEquatable<ProgramState>
     {
-        internal ImmutableDictionary<ISymbol, SymbolicValue> Values { get; }
-        internal ImmutableDictionary<SymbolicValue, SymbolicValueConstraints> Constraints { get; }
-        internal ImmutableDictionary<ProgramPoint, int> ProgramPointVisitCounts { get; }
+        private ImmutableDictionary<ISymbol, SymbolicValue> Values { get; }
+        private ImmutableDictionary<SymbolicValue, SymbolicValueConstraints> Constraints { get; }
+        private ImmutableDictionary<ProgramPoint, int> ProgramPointVisitCounts { get; }
         internal ImmutableStack<SymbolicValue> ExpressionStack { get; }
         internal ImmutableHashSet<BinaryRelationship> Relationships { get; }
 
@@ -423,6 +423,23 @@ namespace SonarAnalyzer.DataFlowAnalysis
         public bool TryGetConstraints(SymbolicValue symbolicValue, out SymbolicValueConstraints constraints)
         {
             return Constraints.TryGetValue(symbolicValue, out constraints);
+        }
+
+        public TConstraint GetConstraint<TConstraint>(SymbolicValue symbolicValue)
+            where TConstraint : SymbolicValueConstraint
+        {
+            SymbolicValueConstraints constraints;
+            return Constraints.TryGetValue(symbolicValue, out constraints)
+                ? constraints.GetConstraintOrDefault<TConstraint>()
+                : default(TConstraint);
+        }
+
+        public SymbolicValueConstraint GetConstraint(SymbolicValue symbolicValue, Type constraintType)
+        {
+            SymbolicValueConstraints constraints;
+            return Constraints.TryGetValue(symbolicValue, out constraints)
+                ? constraints.GetConstraintOrDefault(constraintType)
+                : default(SymbolicValueConstraint);
         }
 
         public bool HasConstraint(SymbolicValue symbolicValue, SymbolicValueConstraint constraint)

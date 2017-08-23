@@ -87,10 +87,15 @@ namespace SonarAnalyzer.DataFlowAnalysis
         internal T GetConstraintOrDefault<T>()
             where T : SymbolicValueConstraint
         {
+            return (T)GetConstraintOrDefault(typeof(T));
+        }
+
+        internal SymbolicValueConstraint GetConstraintOrDefault(Type constraintType)
+        {
             SymbolicValueConstraint constraint = null;
-            return constraints.TryGetValue(typeof(T), out constraint)
-                ? (T)constraint
-                : default(T);
+            return constraints.TryGetValue(constraintType, out constraint)
+                ? constraint
+                : default(SymbolicValueConstraint);
         }
 
         internal bool HasConstraint(SymbolicValueConstraint constraint)
