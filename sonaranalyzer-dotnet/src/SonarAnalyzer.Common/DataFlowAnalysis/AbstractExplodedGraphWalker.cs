@@ -342,7 +342,7 @@ namespace SonarAnalyzer.DataFlowAnalysis
                 symbol.ContainingSymbol.Equals(declaration);
         }
 
-        protected bool IsFieldSymbol(ISymbol symbol)
+        public bool IsFieldSymbol(ISymbol symbol)
         {
             var field = symbol as IFieldSymbol;
 
@@ -407,13 +407,5 @@ namespace SonarAnalyzer.DataFlowAnalysis
         }
 
         #endregion
-
-        protected ProgramState StoreSymbolicValueIfSymbolIsTracked(ISymbol symbol, SymbolicValue symbolicValue,
-            ProgramState programState)
-        {
-            return IsSymbolTracked(symbol)
-                ? programState.StoreSymbolicValue(symbol, symbolicValue)
-                : programState;
-        }
     }
 }
